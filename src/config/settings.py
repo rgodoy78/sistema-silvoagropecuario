@@ -49,11 +49,8 @@ DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
 
-# URL del admin no predecible (reduce escaneos automatizados).
-ADMIN_URL = env("DJANGO_ADMIN_URL", "admin/").strip("/") + "/"
-
+# Sin django.contrib.admin: la gestión de usuarios y perfiles es propia.
 INSTALLED_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -62,6 +59,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "csp",
     "axes",
+    "accounts",
     "core",
 ]
 
@@ -118,6 +116,8 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Autenticación ----------------------------------------------------------
+
+AUTH_USER_MODEL = "accounts.User"
 
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",

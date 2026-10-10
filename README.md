@@ -23,7 +23,8 @@ docker compose -f compose.dev.yml up -d --build
 docker compose -f compose.dev.yml exec web python manage.py createsuperuser
 ```
 
-El admin está en la ruta aleatoria definida en `DJANGO_ADMIN_URL` (`.env`).
+No se usa el admin de Django: la gestión de usuarios y perfiles es propia de la
+aplicación (app `accounts`, modelo `accounts.User`).
 
 El código en `src/` se monta en el contenedor y gunicorn recarga solo al guardar.
 
@@ -57,7 +58,7 @@ dc exec -u postgres db psql -d nexsurcode       # consola SQL (superusuario)
 - Se preserva la IP real del cliente (rootlesskit con port driver `slirp4netns`).
 
 **Django**
-- `DEBUG=False`, `ALLOWED_HOSTS` estricto, URL de admin aleatoria.
+- `DEBUG=False`, `ALLOWED_HOSTS` estricto, admin de Django deshabilitado (menos superficie de ataque).
 - HSTS, CSP estricta (`django-csp`), `X-Frame-Options: DENY`, `nosniff`, COOP, Referrer-Policy, Permissions-Policy.
 - Cookies `__Host-`, `Secure`, `HttpOnly`, `SameSite=Lax`.
 - Contraseñas con Argon2, mínimo 12 caracteres; bloqueo por fuerza bruta con `django-axes` (5 intentos → 1 h).

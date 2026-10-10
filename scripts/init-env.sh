@@ -7,9 +7,8 @@ umask 077
 rand() { python3 -c "import secrets; print(secrets.token_urlsafe($1))"; }
 
 if [[ ! -f .env ]]; then
-  admin_path="admin-$(python3 -c 'import secrets; print(secrets.token_hex(8))')/"
-  sed "s|^DJANGO_ADMIN_URL=.*|DJANGO_ADMIN_URL=${admin_path}|" .env.example > .env
-  echo "Creado .env (admin en /${admin_path})"
+  cp .env.example .env
+  echo "Creado .env"
 fi
 
 mkdir -p secrets

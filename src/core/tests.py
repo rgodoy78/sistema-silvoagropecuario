@@ -24,8 +24,8 @@ class SecurityHeadersTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
 
-    def test_admin_not_at_default_url(self):
-        from django.conf import settings
+    def test_django_admin_disabled(self):
+        from django.apps import apps
 
-        if settings.ADMIN_URL != "admin/":
-            self.assertEqual(self.client.get("/admin/", **SECURE).status_code, 404)
+        self.assertFalse(apps.is_installed("django.contrib.admin"))
+        self.assertEqual(self.client.get("/admin/", **SECURE).status_code, 404)
