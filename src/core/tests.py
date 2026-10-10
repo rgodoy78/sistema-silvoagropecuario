@@ -39,6 +39,17 @@ class SecurityHeadersTests(TestCase):
         self.assertNotContains(response, "style=")
         self.assertNotContains(response, "<script")
 
+    def test_credits_page_lists_every_photo(self):
+        from django.contrib.staticfiles import finders
+
+        from core.views import PHOTO_CREDITS
+
+        response = self.client.get("/creditos/", **SECURE)
+        self.assertEqual(response.status_code, 200)
+        for photo in PHOTO_CREDITS:
+            self.assertContains(response, photo["author"])
+            self.assertIsNotNone(finders.find(f"img/fotos/{photo['file']}"), photo["file"])
+
     def test_healthz_reports_ok(self):
         response = self.client.get("/healthz/")
         self.assertEqual(response.status_code, 200)

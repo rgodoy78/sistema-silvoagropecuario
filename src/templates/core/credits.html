@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Créditos{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Créditos</p>
+    <h1>Fotografías y tipografía</h1>
+    <p class="muted">Imágenes de Wikimedia Commons bajo licencias Creative Commons. Todas fueron recortadas y redimensionadas para este sitio.</p>
+  </div>
+</div>
+<div class="credit-grid">
+  {% for p in photos %}
+  <figure class="credit">
+    <img src="{% static 'img/fotos/'|add:p.file %}" alt="{{ p.title }}" loading="lazy" width="400" height="260">
+    <figcaption>
+      <strong>{{ p.title }}</strong>
+      <span>Foto: {{ p.author }} · <a href="{{ p.license_url }}" rel="license noopener" target="_blank">{{ p.license }}</a> · <a href="{{ p.source }}" rel="noopener" target="_blank">Fuente</a></span>
+    </figcaption>
+  </figure>
+  {% endfor %}
+</div>
+<div class="card">
+  <h2>Tipografía</h2>
+  <p>Montserrat, © The Montserrat Project Authors, bajo <a href="{% static 'fonts/OFL.txt' %}">SIL Open Font License 1.1</a>.</p>
+</div>
+{% endblock %}

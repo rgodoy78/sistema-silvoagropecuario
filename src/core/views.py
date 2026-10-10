@@ -39,6 +39,34 @@ SAMPLE_KPIS = [
 ]
 
 
+CC = "https://creativecommons.org/licenses/{}/deed.es"
+# Fotografías de Wikimedia Commons (recortadas y redimensionadas). Las
+# licencias CC exigen atribución: se muestran en /creditos/.
+PHOTO_CREDITS = [
+    {"file": "hero-colchagua.jpg", "title": "Viñedo en el Valle de Colchagua", "author": "Hiroki Ogawa",
+     "license": "CC BY 3.0", "license_url": CC.format("by/3.0"),
+     "source": "https://commons.wikimedia.org/wiki/File:Winery_Valle_Colchagua_Chile_-_panoramio_(1).jpg"},
+    {"file": "rubro-vitivinicola.jpg", "title": "Hileras de viñedo, Valle de Colchagua", "author": "Hiroki Ogawa",
+     "license": "CC BY 3.0", "license_url": CC.format("by/3.0"),
+     "source": "https://commons.wikimedia.org/wiki/File:Winery_Valle_Colchagua_Chile_-_panoramio_(2).jpg"},
+    {"file": "ingreso-vinedo-andes.jpg", "title": "Viñedo en la precordillera andina", "author": "Beatrice Murch",
+     "license": "CC BY-SA 2.0", "license_url": CC.format("by-sa/2.0"),
+     "source": "https://commons.wikimedia.org/wiki/File:Chilean_vineyard_in_Andes_foothills.jpg"},
+    {"file": "rubro-forestal.jpg", "title": "Plantación forestal en el Biobío", "author": "Eneas De Troya",
+     "license": "CC BY 2.0", "license_url": CC.format("by/2.0"),
+     "source": "https://commons.wikimedia.org/wiki/File:El_bio_bio_(408501923).jpg"},
+    {"file": "rubro-fruticola.jpg", "title": "Cerezas, La Candelaria, Chépica (VI Región)", "author": "Malissette",
+     "license": "CC BY-SA 3.0", "license_url": CC.format("by-sa/3.0"),
+     "source": "https://commons.wikimedia.org/wiki/File:Cerezas_La_Candelaria_Ch%C3%A9pica_VI_Regi%C3%B3n.JPG"},
+    {"file": "rubro-ganadero.jpg", "title": "Ganado frente al volcán Osorno", "author": "Trinicorrea1",
+     "license": "CC BY-SA 3.0", "license_url": CC.format("by-sa/3.0"),
+     "source": "https://commons.wikimedia.org/wiki/File:Volcan_Osorno_Campo.jpg"},
+    {"file": "cta-aysen.jpg", "title": "Ganado Hereford cerca de Coyhaique, Aysén", "author": "Rosario Nieto Chadwick",
+     "license": "CC BY 3.0", "license_url": CC.format("by/3.0"),
+     "source": "https://commons.wikimedia.org/wiki/File:Animales_Jorge_(123837659).jpeg"},
+]
+
+
 def sample_charts():
     return {
         "production": charts.line_chart(SAMPLE_SEASON, SAMPLE_PRODUCTION),
@@ -55,6 +83,12 @@ def sample_charts():
 def landing(request):
     """Portada pública del producto."""
     return render(request, "core/landing.html", {"charts": sample_charts()})
+
+
+@require_GET
+def credits(request):
+    """Atribución de fotografías y tipografía."""
+    return render(request, "core/credits.html", {"photos": PHOTO_CREDITS})
 
 
 def _user_stats():

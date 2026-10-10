@@ -101,6 +101,7 @@ dc exec -u postgres db psql -d nexsurcode       # consola SQL (superusuario)
 ## Notas
 
 - `/` es la portada pública y `/panel/` el panel (requiere sesión). Los gráficos son SVG generados en el servidor (`core/charts.py`, plantillas en `templates/core/charts/`), sin JavaScript. Los indicadores de temporada son datos de ejemplo (`SAMPLE_*` en `core/views.py`) hasta que existan los módulos productivos; los de cuentas de usuario son reales.
+- Fotografías en `static/img/fotos/`, de Wikimedia Commons con licencias CC que exigen atribución: al agregar o cambiar una, actualiza `PHOTO_CREDITS` en `core/views.py` (se muestra en `/creditos/`).
 - Tipografía Montserrat servida localmente desde `static/fonts/` (licencia OFL en `OFL.txt`).
 - La CSP bloquea scripts y estilos inline. Usa archivos estáticos, o `nonce="{{ request.csp_nonce }}"` en las etiquetas `<script>`/`<style>`.
 - Si usas `Authorization: Bearer` en una API, quita `proxy_set_header Authorization ""` del sitio en nginx (se puso para no reenviar las credenciales de la auth básica).
