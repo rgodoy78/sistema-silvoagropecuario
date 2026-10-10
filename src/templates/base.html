@@ -4,31 +4,66 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="same-origin">
-  <title>{% block title %}ERP Silvoagropecuario{% endblock %}</title>
+  <meta name="theme-color" content="#1f4d2b">
+  <title>{% block title %}ERP Silvoagropecuario{% endblock %} · ERP Silvoagropecuario</title>
+  <link rel="preload" href="{% static 'fonts/montserrat-latin-400.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/montserrat-latin-700.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body>
+<body class="{% block body_class %}app{% endblock %}">
   <header class="topbar">
-    <a class="brand" href="{% url 'home' %}">ERP Silvoagropecuario</a>
-    {% if user.is_authenticated %}
-    <nav>
-      {% if perms.accounts.manage_users %}
-        <a href="{% url 'management:user_list' %}">Usuarios</a>
-        <a href="{% url 'management:role_list' %}">Roles</a>
-      {% endif %}
-      <a href="{% url 'accounts:profile' %}">{{ user.get_short_name|default:user.email }}</a>
-      <form method="post" action="{% url 'accounts:logout' %}" class="inline">
-        {% csrf_token %}<button type="submit" class="link">Salir</button>
-      </form>
-    </nav>
-    {% endif %}
+    <div class="topbar-inner">
+      <a class="brand" href="{% if user.is_authenticated %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}">
+        {% include "partials/logo.html" %}
+        <span>ERP <strong>Silvoagropecuario</strong></span>
+      </a>
+      <nav aria-label="Principal">
+        {% if user.is_authenticated %}
+          <a href="{% url 'home' %}">Panel</a>
+          {% if perms.accounts.manage_users %}
+            <a href="{% url 'management:user_list' %}">Usuarios</a>
+            <a href="{% url 'management:role_list' %}">Roles</a>
+          {% endif %}
+          <a href="{% url 'accounts:profile' %}" class="nav-user">
+            <span class="avatar" aria-hidden="true">{{ user.first_name|first|default:user.email|first|upper }}</span>
+            {{ user.get_short_name|default:user.email }}
+          </a>
+          <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+            {% csrf_token %}<button type="submit" class="link">Salir</button>
+          </form>
+        {% else %}
+          {% block public_nav %}
+          <a href="{% url 'landing' %}#rubros">Rubros</a>
+          <a href="{% url 'landing' %}#panel">Panel</a>
+          <a href="{% url 'landing' %}#seguridad">Seguridad</a>
+          {% endblock %}
+          <a href="{% url 'accounts:login' %}" class="button small outline">Ingresar</a>
+          <a href="{% url 'accounts:signup' %}" class="button small accent">Solicitar acceso</a>
+        {% endif %}
+      </nav>
+    </div>
   </header>
 
+  {% block page %}
   <main class="{% block main_class %}container{% endblock %}">
     {% for message in messages %}
       <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
+  {% endblock %}
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        {% include "partials/logo.html" %}
+        <div>
+          <strong>ERP Silvoagropecuario</strong>
+          <p>Gestión forestal, frutícola, vitivinícola y ganadera. Hecho en Chile.</p>
+        </div>
+      </div>
+      <p class="footer-meta">© {% now "Y" %} ERP Silvoagropecuario · De Arica a Magallanes</p>
+    </div>
+  </footer>
 </body>
 </html>

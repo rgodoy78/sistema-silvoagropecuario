@@ -1,0 +1,11 @@
+<ul class="progress-list">
+  {% for item in items %}
+  <li>
+    <span>{{ item.label }}</span><span class="pct">{{ item.pct }} %</span>
+    <svg viewBox="0 0 100 8" preserveAspectRatio="none" role="img" aria-label="{{ item.label }}: {{ item.pct }} %">
+      <rect width="100" height="8" rx="4" class="progress-track"/>
+      <rect width="{{ item.pct }}" height="8" rx="4" class="series-{{ item.color }}"/>
+    </svg>
+  </li>
+  {% endfor %}
+</ul>

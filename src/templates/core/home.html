@@ -1,10 +1,68 @@
 {% extends "base.html" %}
+{% block title %}Panel{% endblock %}
 {% block content %}
-<h1>Hola, {{ user.get_short_name|default:user.email }}</h1>
-<div class="card">
-  <p>Bienvenido al ERP Silvoagropecuario.</p>
-  {% if perms.accounts.manage_users %}
-    <p><a href="{% url 'management:user_list' %}?estado=approval_pending">Revisar solicitudes de registro pendientes</a></p>
-  {% endif %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Panel</p>
+    <h1>Hola, {{ user.get_short_name|default:user.email }}</h1>
+    <p class="muted">Resumen de la temporada {{ season }}.</p>
+  </div>
 </div>
+
+{% if users %}
+<section aria-labelledby="cuentas">
+  <h2 id="cuentas" class="section-label">Cuentas de usuario</h2>
+  <div class="kpi-grid">
+    <div class="kpi"><span class="kpi-label">Usuarios activos</span><span class="kpi-value">{{ users.active }}</span></div>
+    <a class="kpi{% if users.pending %} kpi-alert{% endif %}" href="{% url 'management:user_list' %}?estado=approval_pending">
+      <span class="kpi-label">Solicitudes pendientes</span><span class="kpi-value">{{ users.pending }}</span>
+      <span class="kpi-foot">Revisar solicitudes →</span>
+    </a>
+    <div class="kpi"><span class="kpi-label">Con verificación en dos pasos</span><span class="kpi-value">{{ users.with_2fa }}</span></div>
+  </div>
+  <div class="dash-grid">
+    <div class="panel span-2">
+      <h3>Registros por mes</h3>
+      {% include "core/charts/bar.html" with chart=users.signups title="Registros por mes" %}
+    </div>
+    <div class="panel">
+      <h3>Cuentas por estado</h3>
+      {% include "core/charts/donut.html" with chart=users.by_status title="Cuentas por estado" unit="cuentas" %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section aria-labelledby="temporada">
+  <h2 id="temporada" class="section-label">Temporada <span class="badge badge-sample">Datos de ejemplo</span></h2>
+  <p class="muted small">Estos indicadores se conectarán a los módulos productivos cuando estén disponibles.</p>
+  <div class="kpi-grid kpi-grid-4">
+    {% for k in kpis %}
+    <div class="kpi">
+      <span class="kpi-label">{{ k.label }}</span>
+      <span class="kpi-value">{{ k.value }} <small>{{ k.unit }}</small></span>
+      <span class="trend {% if k.up %}trend-up{% else %}trend-down{% endif %}">{{ k.trend }} vs. temporada anterior</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="dash-grid">
+    <div class="panel span-2">
+      <h3>Producción por temporada</h3>
+      {% include "core/charts/line.html" with chart=charts.production title="Producción por temporada" %}
+    </div>
+    <div class="panel">
+      <h3>Uso de suelo (ha)</h3>
+      {% include "core/charts/donut.html" with chart=charts.land_use title="Uso de suelo" unit="ha" %}
+    </div>
+    <div class="panel span-2">
+      <h3>Ventas por destino (miles de US$)</h3>
+      {% include "core/charts/bar.html" with chart=charts.destinations title="Ventas por destino" color=2 %}
+    </div>
+    <div class="panel">
+      <h3>Avance de cosecha</h3>
+      {% include "core/charts/progress.html" with items=charts.harvest %}
+      <p class="progress-note">Porcentaje cosechado de la temporada.</p>
+    </div>
+  </div>
+</section>
 {% endblock %}

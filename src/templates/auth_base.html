@@ -1,2 +1,25 @@
 {% extends "base.html" %}
-{% block main_class %}container narrow{% endblock %}
+{% load static %}
+{% block body_class %}auth{% endblock %}
+{% block page %}
+<main class="auth-layout">
+  <aside class="auth-aside">
+    <img src="{% static 'img/hero-campo.svg' %}" alt="" class="auth-art">
+    <div class="auth-aside-text">
+      <p class="eyebrow">Campo chileno, gestión moderna</p>
+      <h2>Tu predio, tus cosechas y tus ventas en un solo lugar.</h2>
+      <ul class="checks">
+        <li>Forestal, frutícola, vitivinícola y ganadero</li>
+        <li>Indicadores y gráficos por temporada</li>
+        <li>Acceso seguro con verificación en dos pasos</li>
+      </ul>
+    </div>
+  </aside>
+  <section class="auth-main">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </section>
+</main>
+{% endblock %}

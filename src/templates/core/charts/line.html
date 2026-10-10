@@ -1,0 +1,19 @@
+{% load l10n %}{# Coordenadas SVG: siempre con punto decimal, sin localizar. #}{% localize off %}<svg class="chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img" aria-label="{{ title }}">
+  {% for g in chart.grid %}
+  <line x1="{{ chart.left }}" x2="{{ chart.right }}" y1="{{ g.y }}" y2="{{ g.y }}" class="grid"/>
+  <text x="{{ chart.left|add:'-8' }}" y="{{ g.y }}" class="axis" text-anchor="end" dominant-baseline="middle">{{ g.label }}</text>
+  {% endfor %}
+  {% for l in chart.labels %}
+  <text x="{{ l.x }}" y="{{ chart.bottom }}" dy="18" class="axis" text-anchor="middle">{{ l.label }}</text>
+  {% endfor %}
+  {% for line in chart.lines %}
+  <polygon points="{{ line.area }}" class="area series-{{ line.color }}"/>
+  <polyline points="{{ line.points }}" class="line series-{{ line.color }}"/>
+  {% for d in line.dots %}
+  <circle cx="{{ d.x }}" cy="{{ d.y }}" r="3.5" class="dot series-{{ line.color }}"><title>{{ line.name }}: {{ d.value }}</title></circle>
+  {% endfor %}
+  {% endfor %}
+</svg>
+<ul class="legend">
+  {% for line in chart.lines %}<li><span class="swatch series-{{ line.color }}"></span>{{ line.name }}</li>{% endfor %}
+</ul>{% endlocalize %}
