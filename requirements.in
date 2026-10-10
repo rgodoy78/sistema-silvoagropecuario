@@ -1,6 +1,6 @@
 # Dependencias directas. Regenerar requirements.txt con:
 #   ./scripts/lock-deps.sh
-Django>=5.2.18,<5.3       # LTS (soporte de seguridad hasta abril 2028)
+Django>=6.1.2,<6.2       # LTS (soporte de seguridad hasta abril 2028)
 gunicorn==26.2.0
 psycopg[binary]==3.3.6
 whitenoise==6.12.0
