@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ target }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'management:user_list' %}">« Usuarios</a></p>
+<h1>{{ target.get_full_name|default:target.email }}</h1>
+
+<div class="card">
+  <p>{{ target.email }} · <span class="badge badge-{{ target.status }}">{{ target.get_status_display }}</span>
+    {% if target.is_superuser %} · <strong>Superusuario</strong>{% endif %}</p>
+  <p class="muted">Registrado el {{ target.date_joined|date:"d-m-Y H:i" }}
+    {% if target.reviewed_by %} · Revisado por {{ target.reviewed_by }} el {{ target.reviewed_at|date:"d-m-Y H:i" }}{% endif %}
+    · Último ingreso: {{ target.last_login|date:"d-m-Y H:i"|default:"nunca" }}
+    · 2FA: {% if has_2fa %}activado{% else %}no{% endif %}</p>
+
+  {% if target != user %}
+  <div class="actions">
+    {% if target.status == "approval_pending" %}
+      <form method="post" action="{% url 'management:user_action' target.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="accion" value="aprobar"><button type="submit">Aprobar</button></form>
+      <form method="post" action="{% url 'management:user_action' target.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="accion" value="rechazar"><button type="submit" class="danger">Rechazar</button></form>
+    {% elif target.status == "active" %}
+      <form method="post" action="{% url 'management:user_action' target.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="accion" value="deshabilitar"><button type="submit" class="danger">Deshabilitar</button></form>
+    {% elif target.status == "disabled" or target.status == "rejected" %}
+      <form method="post" action="{% url 'management:user_action' target.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="accion" value="reactivar"><button type="submit">Reactivar</button></form>
+    {% endif %}
+    {% if has_2fa %}
+      <form method="post" action="{% url 'management:user_action' target.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="accion" value="reiniciar_2fa"><button type="submit" class="secondary">Reiniciar 2FA</button></form>
+    {% endif %}
+  </div>
+  {% if target.status == "approval_pending" %}<p class="muted">Asigna los roles abajo y guarda antes de aprobar.</p>{% endif %}
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Datos y roles</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit">Guardar</button></div>
+  </form>
+</div>
+{% endblock %}

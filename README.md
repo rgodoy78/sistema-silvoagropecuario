@@ -23,8 +23,37 @@ docker compose -f compose.dev.yml up -d --build
 docker compose -f compose.dev.yml exec web python manage.py createsuperuser
 ```
 
-No se usa el admin de Django: la gestión de usuarios y perfiles es propia de la
-aplicación (app `accounts`, modelo `accounts.User`).
+Ese primer superusuario deberá configurar 2FA en su primer ingreso.
+
+## Cuentas de usuario
+
+No se usa el admin de Django: la gestión de usuarios, roles y perfiles es propia
+(app `accounts`).
+
+- **Login con correo** (`/cuentas/ingresar/`) + 2FA (TOTP) si el usuario lo activó.
+- **Registro** (`/cuentas/registro/`): confirmar correo → pendiente de aprobación →
+  un administrador aprueba o rechaza en `/gestion/usuarios/` → se notifica por correo.
+- **Roles** = grupos de Django con permisos (`/gestion/roles/`). El rol
+  `Administrador` (permiso `accounts.manage_users`) gestiona usuarios y roles.
+- **2FA obligatorio para administradores**: sin 2FA verificado solo pueden ir a
+  configurarlo. Para el resto es opcional. Incluye 10 códigos de recuperación.
+- Si alguien pierde su teléfono, un administrador puede "Reiniciar 2FA".
+- **Recuperar contraseña** por correo (`/cuentas/recuperar/`, enlace válido 1 hora).
+
+### Correo con Gmail
+
+1. En la cuenta de Google: activa la verificación en 2 pasos y crea una
+   **contraseña de aplicación** (myaccount.google.com/apppasswords).
+2. Guárdala: `printf '%s' 'xxxx xxxx xxxx xxxx' > secrets/email_password`
+3. En `.env`:
+   ```
+   DJANGO_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+   DJANGO_EMAIL_USER=tu-cuenta@gmail.com
+   DJANGO_DEFAULT_FROM_EMAIL=ERP Silvoagropecuario <tu-cuenta@gmail.com>
+   ```
+4. `docker compose -f compose.dev.yml up -d`
+
+Mientras no esté configurado, los correos aparecen en `docker compose -f compose.dev.yml logs web`.
 
 El código en `src/` se monta en el contenedor y gunicorn recarga solo al guardar.
 
@@ -53,12 +82,13 @@ dc exec -u postgres db psql -d nexsurcode       # consola SQL (superusuario)
 **Proxy (nginx)**
 - TLS 1.2/1.3 (Let's Encrypt, renovación automática), redirección HTTP→HTTPS.
 - Peticiones con `Host` desconocido se descartan (escaneos por IP).
-- Rate limiting general y estricto en `/login/`, límites de tamaño y timeouts.
+- Rate limiting general y estricto en `/cuentas/` (login, 2FA, registro, recuperación), límites de tamaño y timeouts.
 - Dev completo detrás de auth básica (bcrypt).
 - Se preserva la IP real del cliente (rootlesskit con port driver `slirp4netns`).
 
 **Django**
 - `DEBUG=False`, `ALLOWED_HOSTS` estricto, admin de Django deshabilitado (menos superficie de ataque).
+- 2FA obligatorio para administradores; el registro no revela qué correos existen; los enlaces de confirmación requieren POST (los escáneres de enlaces no los activan).
 - HSTS, CSP estricta (`django-csp`), `X-Frame-Options: DENY`, `nosniff`, COOP, Referrer-Policy, Permissions-Policy.
 - Cookies `__Host-`, `Secure`, `HttpOnly`, `SameSite=Lax`.
 - Contraseñas con Argon2, mínimo 12 caracteres; bloqueo por fuerza bruta con `django-axes` (5 intentos → 1 h).

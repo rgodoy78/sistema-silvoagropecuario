@@ -34,6 +34,13 @@ def env_list(name, default=""):
     return [item.strip() for item in env(name, default).split(",") if item.strip()]
 
 
+def optional_secret(name):
+    path = env(f"{name}_FILE")
+    if path and Path(path).is_file():
+        return Path(path).read_text().strip()
+    return env(name, "")
+
+
 def secret(name):
     """Lee un secreto desde el archivo indicado en <NAME>_FILE, o desde <NAME>."""
     path = env(f"{name}_FILE")
@@ -59,6 +66,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "csp",
     "axes",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_static",
     "accounts",
     "core",
 ]
@@ -72,8 +82,10 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "accounts.middleware.Require2FAForAdminsMiddleware",
     # Debe ir al final: bloquea tras intentos fallidos de login.
     "axes.middleware.AxesMiddleware",
 ]
@@ -118,6 +130,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # --- Autenticación ----------------------------------------------------------
 
 AUTH_USER_MODEL = "accounts.User"
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "accounts:login"
+PASSWORD_RESET_TIMEOUT = 60 * 60  # enlace de recuperación válido 1 hora
 
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
@@ -146,6 +162,10 @@ AXES_RESET_ON_SUCCESS = True
 # Nginx sobrescribe X-Real-IP con la IP real del cliente; Django no es
 # accesible directamente, así que esta cabecera es confiable.
 AXES_IPWARE_META_PRECEDENCE_ORDER = ["HTTP_X_REAL_IP"]
+AXES_LOCKOUT_TEMPLATE = "accounts/locked_out.html"
+
+# 2FA (django-otp): nombre que aparece en la app autenticadora.
+OTP_TOTP_ISSUER = env("OTP_TOTP_ISSUER", "ERP Silvoagropecuario")
 
 # --- HTTPS, cookies y cabeceras de seguridad --------------------------------
 
@@ -197,6 +217,20 @@ PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=(), payment=(), usb=
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 
+# --- Correo -----------------------------------------------------------------
+
+# Gmail: requiere verificación en 2 pasos en la cuenta de Google y una
+# "contraseña de aplicación" (no la contraseña normal) en secrets/email_password.
+EMAIL_BACKEND = env("DJANGO_EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("DJANGO_EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = env_int("DJANGO_EMAIL_PORT", 587)
+EMAIL_USE_TLS = True
+EMAIL_TIMEOUT = 10
+EMAIL_HOST_USER = env("DJANGO_EMAIL_USER", "")
+EMAIL_HOST_PASSWORD = optional_secret("DJANGO_EMAIL_PASSWORD")
+DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "webmaster@localhost")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
 # --- Internacionalización ---------------------------------------------------
 
 LANGUAGE_CODE = "es-cl"
@@ -205,6 +239,8 @@ USE_I18N = True
 USE_TZ = True
 
 # --- Archivos estáticos -----------------------------------------------------
+
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 STATIC_URL = "static/"
 # Fuera de /app para que el código montado en desarrollo no lo oculte.

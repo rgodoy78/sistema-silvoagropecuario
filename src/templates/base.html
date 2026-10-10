@@ -1,0 +1,34 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="same-origin">
+  <title>{% block title %}ERP Silvoagropecuario{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{% url 'home' %}">ERP Silvoagropecuario</a>
+    {% if user.is_authenticated %}
+    <nav>
+      {% if perms.accounts.manage_users %}
+        <a href="{% url 'management:user_list' %}">Usuarios</a>
+        <a href="{% url 'management:role_list' %}">Roles</a>
+      {% endif %}
+      <a href="{% url 'accounts:profile' %}">{{ user.get_short_name|default:user.email }}</a>
+      <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+        {% csrf_token %}<button type="submit" class="link">Salir</button>
+      </form>
+    </nav>
+    {% endif %}
+  </header>
+
+  <main class="{% block main_class %}container{% endblock %}">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

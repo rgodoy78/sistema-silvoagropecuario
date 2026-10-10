@@ -1,0 +1,11 @@
+{% extends "auth_base.html" %}
+{% block title %}Códigos de recuperación{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Códigos de recuperación</h1>
+  <p>Guárdalos en un lugar seguro (gestor de contraseñas). Cada código sirve <strong>una sola vez</strong> si pierdes tu teléfono.
+     <strong>No se volverán a mostrar.</strong></p>
+  <ol class="codes">{% for code in codes %}<li>{{ code }}</li>{% endfor %}</ol>
+  <div class="actions"><a class="button" href="{% url 'home' %}">Ya los guardé</a></div>
+</div>
+{% endblock %}

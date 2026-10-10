@@ -1,0 +1,1 @@
+{% if user.status == "active" %}Tu acceso fue aprobado{% else %}Tu solicitud de acceso{% endif %} - ERP Silvoagropecuario

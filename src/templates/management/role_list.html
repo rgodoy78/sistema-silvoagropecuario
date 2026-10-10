@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<h1>Roles</h1>
+<p><a class="button" href="{% url 'management:role_create' %}">Nuevo rol</a></p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Rol</th><th>Permisos</th><th></th></tr></thead>
+  <tbody>
+  {% for role in roles %}
+    <tr>
+      <td><a href="{% url 'management:role_edit' role.pk %}">{{ role.name }}</a></td>
+      <td>{% for p in role.permissions.all %}{{ p.name }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">-</span>{% endfor %}</td>
+      <td>{% if role.name != admin_role %}
+        <form method="post" action="{% url 'management:role_delete' role.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>
+      {% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="3" class="muted">Sin roles.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

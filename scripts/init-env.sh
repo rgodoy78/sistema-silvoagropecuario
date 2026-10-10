@@ -20,6 +20,9 @@ for name in django_secret_key:64 postgres_password:32 db_app_password:32; do
     echo "Creado $file"
   fi
 done
+# Contraseña de aplicación de Gmail: se completa a mano (vacío = sin SMTP).
+[[ -f secrets/email_password ]] || { : > secrets/email_password; echo "Creado secrets/email_password (vacío)"; }
+
 # El directorio es 700 (solo tu usuario). Los archivos deben ser legibles
 # por el usuario no-root dentro del contenedor (Docker rootless no permite
 # ajustar el dueño de los secretos).

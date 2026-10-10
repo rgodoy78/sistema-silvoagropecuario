@@ -1,0 +1,4 @@
+{% extends "auth_base.html" %}
+{% block content %}
+<div class="card"><h1>Sesión cerrada</h1><p><a href="{% url 'accounts:login' %}">Ingresar nuevamente</a></p></div>
+{% endblock %}
