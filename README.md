@@ -68,6 +68,7 @@ dc run --rm migrate                             # aplicar migraciones
 dc exec web python manage.py test
 dc exec -u postgres db psql -d nexsurcode       # consola SQL (superusuario)
 ./scripts/lock-deps.sh                          # tras editar requirements.in
+./scripts/ci-local.sh                           # mismos chequeos que el CI de GitHub
 ```
 
 ## Seguridad aplicada
