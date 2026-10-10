@@ -1,0 +1,9 @@
+# Dependencias directas. Regenerar requirements.txt con:
+#   ./scripts/lock-deps.sh
+Django>=5.2.18,<5.3       # LTS (soporte de seguridad hasta abril 2028)
+gunicorn==26.2.0
+psycopg[binary]==3.3.6
+whitenoise==6.12.0
+django-axes==8.3.1
+argon2-cffi==25.1.0
+django-csp==4.0

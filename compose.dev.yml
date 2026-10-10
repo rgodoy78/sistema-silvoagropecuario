@@ -1,0 +1,142 @@
+# Stack de DESARROLLO de nexsurcode.
+#   Uso:  docker compose -f compose.dev.yml up -d --build
+# Requiere el stack ../proxy en ejecución (crea la red "edge").
+
+name: ${COMPOSE_PROJECT_NAME:-nexsurcode-dev}
+
+x-hardening: &hardening
+  restart: unless-stopped
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+x-django: &django
+  <<: *hardening
+  build:
+    context: .
+  image: nexsurcode:dev
+  env_file: .env
+  environment:
+    DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret_key
+    DB_PASSWORD_FILE: /run/secrets/db_app_password
+    DB_HOST: db
+  secrets:
+    - django_secret_key
+    - db_app_password
+  volumes:
+    # Código montado en solo lectura para editar en caliente.
+    - ./src:/app:ro
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  cap_drop: [ALL]
+  user: "10001:10001"
+  # Solo dev: en Docker rootless el grupo 0 del contenedor es tu grupo del
+  # host, así 'app' puede leer el código montado aunque tu umask sea 007.
+  group_add: ["0"]
+
+services:
+  db:
+    <<: *hardening
+    image: postgres:18.6-alpine3.24
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Superusuario solo para administración; Django usa DB_USER.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=peer"
+      DB_USER: ${DB_USER}
+    secrets:
+      - postgres_password
+      - db_app_password
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
+    networks:
+      - backend
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+      - /var/run/postgresql:size=1m
+    cap_drop: [ALL]
+    # Mínimo necesario para que el entrypoint ajuste permisos y baje a 'postgres'.
+    cap_add: [CHOWN, DAC_READ_SEARCH, FOWNER, SETGID, SETUID]
+    shm_size: 128m
+    mem_limit: 1g
+    pids_limit: 200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Aplica migraciones una vez y termina; 'web' espera a que finalice bien.
+  migrate:
+    <<: *django
+    restart: "no"
+    build: !reset null   # usa la imagen que construye 'web'
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Comandos que escriben en src/ (makemigrations, startapp...):
+  #   docker compose -f compose.dev.yml run --rm manage makemigrations
+  manage:
+    <<: *django
+    build: !reset null
+    profiles: [tools]
+    restart: "no"
+    # En Docker rootless, uid 0 del contenedor = tu usuario del host,
+    # así los archivos generados quedan a tu nombre.
+    user: "0:0"
+    volumes: !override
+      - ./src:/app
+    entrypoint: ["python", "manage.py"]
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    <<: *django
+    networks:
+      backend:
+      edge:
+        # Nombre con el que nginx encuentra este servicio.
+        aliases: ["${COMPOSE_PROJECT_NAME:-nexsurcode-dev}-web"]
+    mem_limit: 768m
+    pids_limit: 200
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+networks:
+  # Red interna: sin salida a internet. Solo web <-> db.
+  backend:
+    internal: true
+  # Red compartida con el proxy nginx (creada por ../proxy).
+  edge:
+    external: true
+
+volumes:
+  pgdata:
+
+secrets:
+  django_secret_key:
+    file: ./secrets/django_secret_key
+  postgres_password:
+    file: ./secrets/postgres_password
+  db_app_password:
+    file: ./secrets/db_app_password

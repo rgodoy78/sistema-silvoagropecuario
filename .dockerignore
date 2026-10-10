@@ -1,0 +1,15 @@
+# Solo entra a la imagen lo que el Dockerfile copia explícitamente.
+.git
+.github
+.env
+.env.*
+secrets/
+**/__pycache__
+**/*.py[cod]
+.venv
+venv
+*.sqlite3
+.vscode
+.idea
+README.md
+compose*.yml

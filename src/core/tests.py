@@ -1,0 +1,31 @@
+from django.test import TestCase, override_settings
+
+SECURE = {"secure": True, "headers": {"host": "testserver"}}
+
+
+@override_settings(ALLOWED_HOSTS=["testserver"])
+class SecurityHeadersTests(TestCase):
+    def test_http_redirects_to_https(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 301)
+        self.assertTrue(response["Location"].startswith("https://"))
+
+    def test_security_headers_present(self):
+        response = self.client.get("/", **SECURE)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("max-age=", response["Strict-Transport-Security"])
+        self.assertEqual(response["X-Frame-Options"], "DENY")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+        self.assertIn("default-src 'self'", response["Content-Security-Policy"])
+        self.assertIn("camera=()", response["Permissions-Policy"])
+
+    def test_healthz_reports_ok(self):
+        response = self.client.get("/healthz/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+
+    def test_admin_not_at_default_url(self):
+        from django.conf import settings
+
+        if settings.ADMIN_URL != "admin/":
+            self.assertEqual(self.client.get("/admin/", **SECURE).status_code, 404)

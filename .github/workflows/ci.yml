@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+# Mínimo privilegio para el GITHUB_TOKEN.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, auditoría y tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.6-alpine3.24
+        env:
+          POSTGRES_PASSWORD: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: ci-only-not-secret
+      DJANGO_ALLOWED_HOSTS: testserver
+      DB_USER: postgres
+      DB_PASSWORD: ci
+      DB_HOST: localhost
+      POSTGRES_DB: postgres
+    steps:
+      # Acciones fijadas por SHA (Dependabot las mantiene al día).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Instalar dependencias (verificando hashes)
+        run: |
+          pip install --require-hashes --only-binary=:all: -r requirements.txt
+          pip install ruff==0.17.0 pip-audit==2.10.1
+
+      - name: Ruff (estilo + reglas de seguridad)
+        run: ruff check src
+
+      - name: Vulnerabilidades conocidas en dependencias
+        run: pip-audit --strict --require-hashes --disable-pip -r requirements.txt
+
+      - name: Django check --deploy
+        working-directory: src
+        run: python manage.py check --deploy --fail-level ERROR
+
+      - name: Migraciones pendientes
+        working-directory: src
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Tests
+        working-directory: src
+        run: python manage.py test --noinput
+
+  image:
+    name: Build y escaneo de imagen
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build
+        run: docker build -t nexsurcode:ci .
+
+      - name: Trivy (falla con vulnerabilidades HIGH/CRITICAL con parche disponible)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.73.0 image --quiet --exit-code 1 \
+            --severity HIGH,CRITICAL --ignore-unfixed nexsurcode:ci

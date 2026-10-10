@@ -1,0 +1,25 @@
+# Secretos y configuración local: NUNCA a git
+.env
+.env.*
+!.env.example
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Django
+/src/staticfiles/
+/src/media/
+*.sqlite3
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
