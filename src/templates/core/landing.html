@@ -5,6 +5,7 @@
 {% block page %}
 <main>
   <section class="hero">
+    <img src="{% static 'img/fotos/hero-colchagua.jpg' %}" alt="" class="hero-bg" width="1920" height="960" fetchpriority="high">
     <div class="hero-inner">
       <div class="hero-copy">
         <p class="eyebrow">ERP para el sector silvoagropecuario</p>
@@ -21,11 +22,11 @@
         </div>
       </div>
     </div>
-    <img src="{% static 'img/hero-campo.svg' %}" alt="" class="hero-art">
+    <p class="hero-caption">Valle de Colchagua, Región de O’Higgins</p>
   </section>
 
-  <section class="ribbon" aria-label="Rubros">
-    <div class="ribbon-inner">
+  <section class="strip" aria-label="Rubros">
+    <div class="strip-inner">
       <span>Forestal</span><span>Frutícola</span><span>Vitivinícola</span><span>Ganadero</span><span>Cultivos anuales</span>
     </div>
   </section>
@@ -35,25 +36,33 @@
       <p class="eyebrow center">Rubros</p>
       <h2 class="section-title">Pensado para cada rubro del agro y el bosque</h2>
       <div class="sector-grid">
-        <article class="sector sector-forest">
-          <svg viewBox="0 0 48 48" aria-hidden="true" class="sector-icon"><path d="M24 4 L12 22 h7 L9 36 h30 L29 22 h7 Z"/><path d="M24 36 v8"/></svg>
-          <h3>Forestal</h3>
-          <p>Rodales, faenas de cosecha, despacho de trozos y certificación de origen.</p>
+        <article class="sector">
+          <div class="sector-img"><img src="{% static 'img/fotos/rubro-forestal.jpg' %}" alt="Plantación forestal en la Región del Biobío" loading="lazy" width="800" height="520"></div>
+          <div class="sector-body">
+            <h3>Forestal</h3>
+            <p>Rodales, faenas de cosecha, despacho de trozos y certificación de origen.</p>
+          </div>
         </article>
-        <article class="sector sector-fruit">
-          <svg viewBox="0 0 48 48" aria-hidden="true" class="sector-icon"><path d="M24 8 C26 14 30 18 36 20"/><path d="M24 8 C22 16 18 22 14 26"/><circle cx="14" cy="32" r="8"/><circle cx="34" cy="28" r="8"/><path d="M24 8 C30 4 36 6 38 10 C32 12 27 11 24 8 Z"/></svg>
-          <h3>Frutícola</h3>
-          <p>Cerezas, arándanos, manzanas y uva de mesa: cuarteles, cosecha y embalaje.</p>
+        <article class="sector">
+          <div class="sector-img"><img src="{% static 'img/fotos/rubro-fruticola.jpg' %}" alt="Cerezas en el árbol, Chépica, Región de O’Higgins" loading="lazy" width="800" height="520"></div>
+          <div class="sector-body">
+            <h3>Frutícola</h3>
+            <p>Cerezas, arándanos, manzanas y uva de mesa: cuarteles, cosecha y embalaje.</p>
+          </div>
         </article>
-        <article class="sector sector-wine">
-          <svg viewBox="0 0 48 48" aria-hidden="true" class="sector-icon"><circle cx="20" cy="18" r="5"/><circle cx="30" cy="18" r="5"/><circle cx="25" cy="27" r="5"/><circle cx="15" cy="27" r="5"/><circle cx="35" cy="27" r="5"/><circle cx="20" cy="36" r="5"/><circle cx="30" cy="36" r="5"/><path d="M25 13 V5 M25 8 C29 5 33 6 35 9"/></svg>
-          <h3>Vitivinícola</h3>
-          <p>Viñedos por variedad, madurez, vendimia y entrega a bodega con trazabilidad.</p>
+        <article class="sector">
+          <div class="sector-img"><img src="{% static 'img/fotos/rubro-vitivinicola.jpg' %}" alt="Hileras de viñedo en el Valle de Colchagua" loading="lazy" width="800" height="520"></div>
+          <div class="sector-body">
+            <h3>Vitivinícola</h3>
+            <p>Viñedos por variedad, madurez, vendimia y entrega a bodega con trazabilidad.</p>
+          </div>
         </article>
-        <article class="sector sector-cattle">
-          <svg viewBox="0 0 48 48" aria-hidden="true" class="sector-icon"><path d="M24 44 V14"/><path d="M24 18 C20 16 18 12 19 8 C23 10 24 14 24 18 Z"/><path d="M24 18 C28 16 30 12 29 8 C25 10 24 14 24 18 Z"/><path d="M24 28 C19 26 17 22 18 18 C22 20 24 24 24 28 Z"/><path d="M24 28 C29 26 31 22 30 18 C26 20 24 24 24 28 Z"/><path d="M24 38 C19 36 17 32 18 28 C22 30 24 34 24 38 Z"/><path d="M24 38 C29 36 31 32 30 28 C26 30 24 34 24 38 Z"/></svg>
-          <h3>Ganadero y cultivos</h3>
-          <p>Praderas, masa ganadera, cereales y forrajes con control de insumos.</p>
+        <article class="sector">
+          <div class="sector-img"><img src="{% static 'img/fotos/rubro-ganadero.jpg' %}" alt="Ganado pastando frente al volcán Osorno" loading="lazy" width="800" height="520"></div>
+          <div class="sector-body">
+            <h3>Ganadero y cultivos</h3>
+            <p>Praderas, masa ganadera, cereales y forrajes con control de insumos.</p>
+          </div>
         </article>
       </div>
     </div>
@@ -89,36 +98,42 @@
     </div>
   </section>
 
-  <section class="section" id="seguridad">
-    <div class="section-inner">
-      <p class="eyebrow center">Por qué elegirnos</p>
-      <h2 class="section-title">Hecho para trabajar en equipo, con tu información protegida</h2>
-      <div class="feature-grid">
-        <div class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 6 V12 C20 17 16 21 12 22 C8 21 4 17 4 12 V6 Z"/><path d="M8.5 12 l2.5 2.5 l4.5 -5"/></svg>
-          <h3>Seguridad desde el diseño</h3>
-          <p>Verificación en dos pasos, contraseñas cifradas con Argon2 y bloqueo ante intentos de acceso.</p>
-        </div>
-        <div class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20 C3 16 5.5 14 9 14 C12.5 14 15 16 15.5 20"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14 C19 14 21 15.5 21.5 19"/></svg>
-          <h3>Roles por equipo</h3>
-          <p>Administración, campo, bodega y gerencia: cada persona ve y hace solo lo que le corresponde.</p>
-        </div>
-        <div class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 H21"/><path d="M5 20 V12 H8 V20"/><path d="M10.5 20 V7 H13.5 V20"/><path d="M16 20 V10 H19 V20"/></svg>
-          <h3>Indicadores por temporada</h3>
-          <p>Producción, rendimiento por hectárea y ventas por destino, comparados temporada a temporada.</p>
-        </div>
-        <div class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 C12 21 5 14.5 5 9.5 A7 7 0 0 1 19 9.5 C19 14.5 12 21 12 21 Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-          <h3>Hecho en Chile</h3>
-          <p>RUT, regiones, peso chileno y temporadas del hemisferio sur, de Arica a Magallanes.</p>
+  <section class="section split" id="seguridad">
+    <div class="section-inner split-inner">
+      <div class="split-img">
+        <img src="{% static 'img/fotos/ingreso-vinedo-andes.jpg' %}" alt="Viñedo en la precordillera de los Andes" loading="lazy" width="1400" height="1400">
+      </div>
+      <div class="split-copy">
+        <p class="eyebrow">Por qué elegirnos</p>
+        <h2 class="section-title left">Hecho para trabajar en equipo, con tu información protegida</h2>
+        <div class="feature-list">
+          <div class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 6 V12 C20 17 16 21 12 22 C8 21 4 17 4 12 V6 Z"/><path d="M8.5 12 l2.5 2.5 l4.5 -5"/></svg>
+            <div><h3>Seguridad desde el diseño</h3>
+            <p>Verificación en dos pasos, contraseñas cifradas con Argon2 y bloqueo ante intentos de acceso.</p></div>
+          </div>
+          <div class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20 C3 16 5.5 14 9 14 C12.5 14 15 16 15.5 20"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14 C19 14 21 15.5 21.5 19"/></svg>
+            <div><h3>Roles por equipo</h3>
+            <p>Administración, campo, bodega y gerencia: cada persona ve y hace solo lo que le corresponde.</p></div>
+          </div>
+          <div class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 H21"/><path d="M5 20 V12 H8 V20"/><path d="M10.5 20 V7 H13.5 V20"/><path d="M16 20 V10 H19 V20"/></svg>
+            <div><h3>Indicadores por temporada</h3>
+            <p>Producción, rendimiento por hectárea y ventas por destino, comparados temporada a temporada.</p></div>
+          </div>
+          <div class="feature">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 C12 21 5 14.5 5 9.5 A7 7 0 0 1 19 9.5 C19 14.5 12 21 12 21 Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            <div><h3>Hecho en Chile</h3>
+            <p>RUT, regiones, peso chileno y temporadas del hemisferio sur, de Arica a Magallanes.</p></div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <section class="cta">
+    <img src="{% static 'img/fotos/cta-aysen.jpg' %}" alt="" class="cta-bg" loading="lazy" width="1920" height="760">
     <div class="section-inner cta-inner">
       <div>
         <h2>¿Listo para ordenar tu temporada?</h2>
