@@ -141,7 +141,7 @@ class LoginTwoFactorTests(BaseTestCase):
         device = enable_2fa(user)
         self.assertRedirects(self.login(user), reverse("accounts:login_otp"))
         # Aún no hay sesión iniciada.
-        self.assertRedirects(self.client.get(reverse("home")), f"{reverse('accounts:login')}?next=/")
+        self.assertRedirects(self.client.get(reverse("home")), f"{reverse('accounts:login')}?next={reverse('home')}")
 
         response = self.client.post(reverse("accounts:login_otp"), {"token": "000000"})
         self.assertContains(response, "Código incorrecto")

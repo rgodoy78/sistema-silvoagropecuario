@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax slice" role="img" aria-label="Paisaje del campo chileno: cordillera de los Andes, bosque, viñedos y huertos">
+  <defs>
+    <linearGradient id="andesFar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9db4bd"/>
+      <stop offset="1" stop-color="#b9cbcc"/>
+    </linearGradient>
+    <linearGradient id="andesNear" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6f8f97"/>
+      <stop offset="1" stop-color="#8eaaa6"/>
+    </linearGradient>
+    <linearGradient id="vine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fbf6e"/>
+      <stop offset="1" stop-color="#6f9a45"/>
+    </linearGradient>
+    <linearGradient id="wheat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecc56c"/>
+      <stop offset="1" stop-color="#d9a441"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="905" cy="150" r="58" fill="#f2c45c" opacity=".9"/>
+  <circle cx="905" cy="150" r="90" fill="#f2c45c" opacity=".15"/>
+
+  <!-- Cordillera lejana -->
+  <path fill="url(#andesFar)" d="M0 300 L70 250 L120 268 L190 196 L250 240 L320 170 L390 228 L450 205 L520 140 L590 210 L660 186 L730 120 L800 196 L860 172 L930 214 L1000 150 L1070 206 L1130 182 L1200 222 L1200 360 L0 360 Z"/>
+  <path fill="#fbfcfb" opacity=".95" d="M190 196 L172 214 L186 210 L197 220 L208 207 Z M320 170 L298 194 L314 189 L326 200 L340 186 Z M520 140 L494 168 L512 162 L524 175 L538 160 L548 166 Z M730 120 L700 152 L720 146 L734 160 L748 144 L760 150 Z M1000 150 L976 178 L992 172 L1004 184 L1018 170 Z"/>
+
+  <!-- Cordillera cercana -->
+  <path fill="url(#andesNear)" d="M0 340 L90 290 L160 312 L250 262 L330 300 L420 250 L500 296 L590 268 L680 302 L770 246 L860 292 L960 258 L1050 300 L1130 276 L1200 300 L1200 400 L0 400 Z"/>
+  <path fill="#f4f7f6" opacity=".9" d="M250 262 L232 276 L246 274 L256 282 L266 272 Z M420 250 L400 266 L414 263 L424 272 L436 261 Z M770 246 L748 263 L764 260 L774 270 L788 258 Z"/>
+
+  <!-- Precordillera y lomas -->
+  <path fill="#9dbb7c" d="M0 380 C120 340 240 352 360 368 C500 386 620 334 760 344 C900 354 1020 330 1200 352 L1200 440 L0 440 Z"/>
+
+  <!-- Bosque de pinos (izquierda) -->
+  <path fill="#2f6b3a" d="M0 392 C80 368 170 362 260 378 C330 390 380 404 430 420 L430 470 L0 470 Z"/>
+  <g fill="#1f4d2b">
+    <path d="M18 392 l14 -46 l14 46 z"/><path d="M40 388 l17 -56 l17 56 z"/><path d="M70 384 l13 -42 l13 42 z"/>
+    <path d="M92 380 l18 -60 l18 60 z"/><path d="M124 378 l14 -46 l14 46 z"/><path d="M148 376 l17 -54 l17 54 z"/>
+    <path d="M178 376 l13 -40 l13 40 z"/><path d="M200 378 l18 -58 l18 58 z"/><path d="M232 380 l14 -44 l14 44 z"/>
+    <path d="M256 384 l16 -50 l16 50 z"/><path d="M286 388 l13 -40 l13 40 z"/><path d="M308 392 l16 -48 l16 48 z"/>
+    <path d="M338 398 l12 -36 l12 36 z"/><path d="M360 404 l14 -42 l14 42 z"/>
+  </g>
+  <g fill="#245a31">
+    <path d="M30 410 l12 -34 l12 34 z"/><path d="M84 404 l14 -40 l14 40 z"/><path d="M138 400 l12 -34 l12 34 z"/>
+    <path d="M190 402 l14 -40 l14 40 z"/><path d="M244 406 l12 -34 l12 34 z"/><path d="M296 412 l13 -36 l13 36 z"/>
+  </g>
+
+  <!-- Campo de trigo -->
+  <path fill="url(#wheat)" d="M380 430 C520 396 700 392 860 404 C980 413 1090 404 1200 392 L1200 470 L380 470 Z"/>
+  <g stroke="#c48f2f" stroke-width="2" opacity=".55">
+    <path d="M470 440 l6 -14"/><path d="M520 432 l6 -14"/><path d="M570 428 l6 -14"/><path d="M620 426 l6 -14"/>
+    <path d="M670 424 l6 -14"/><path d="M720 424 l6 -14"/><path d="M770 425 l6 -14"/><path d="M820 427 l6 -14"/>
+    <path d="M870 428 l6 -14"/><path d="M920 427 l6 -14"/><path d="M970 424 l6 -14"/><path d="M1020 421 l6 -14"/>
+    <path d="M1070 418 l6 -14"/><path d="M1120 414 l6 -14"/><path d="M1170 410 l6 -14"/>
+  </g>
+
+  <!-- Viñedo en hileras -->
+  <path fill="url(#vine)" d="M0 470 C200 440 420 446 600 452 C800 458 1000 444 1200 436 L1200 600 L0 600 Z"/>
+  <g stroke="#3f6f2a" stroke-width="5" stroke-linecap="round" fill="none" opacity=".8">
+    <path d="M600 456 L-120 600"/><path d="M600 456 L40 600"/><path d="M600 456 L200 600"/>
+    <path d="M600 456 L360 600"/><path d="M600 456 L520 600"/><path d="M600 456 L680 600"/>
+    <path d="M600 456 L840 600"/><path d="M600 456 L1000 600"/><path d="M600 456 L1160 600"/>
+    <path d="M600 456 L1320 600"/>
+  </g>
+  <g fill="#7a1f3d" opacity=".75">
+    <circle cx="300" cy="540" r="5"/><circle cx="214" cy="568" r="6"/><circle cx="430" cy="520" r="4"/>
+    <circle cx="760" cy="532" r="5"/><circle cx="880" cy="560" r="6"/><circle cx="964" cy="584" r="6"/>
+  </g>
+
+  <!-- Huerto de cerezos (derecha) -->
+  <g>
+    <rect x="1006" y="404" width="6" height="26" fill="#6b4423"/>
+    <circle cx="1009" cy="396" r="22" fill="#3f7d3a"/>
+    <rect x="1062" y="398" width="6" height="28" fill="#6b4423"/>
+    <circle cx="1065" cy="388" r="25" fill="#2f6b3a"/>
+    <rect x="1122" y="394" width="6" height="28" fill="#6b4423"/>
+    <circle cx="1125" cy="384" r="23" fill="#3f7d3a"/>
+    <rect x="1176" y="390" width="6" height="28" fill="#6b4423"/>
+    <circle cx="1179" cy="380" r="24" fill="#2f6b3a"/>
+    <g fill="#c0392b">
+      <circle cx="1000" cy="392" r="3"/><circle cx="1016" cy="402" r="3"/><circle cx="1012" cy="386" r="3"/>
+      <circle cx="1056" cy="384" r="3"/><circle cx="1072" cy="394" r="3"/><circle cx="1068" cy="376" r="3"/>
+      <circle cx="1118" cy="380" r="3"/><circle cx="1132" cy="390" r="3"/><circle cx="1128" cy="372" r="3"/>
+      <circle cx="1172" cy="376" r="3"/><circle cx="1186" cy="386" r="3"/><circle cx="1182" cy="368" r="3"/>
+    </g>
+  </g>
+
+  <!-- Primer plano -->
+  <path fill="#2f6b3a" opacity=".35" d="M0 572 C240 552 480 566 720 574 C920 580 1060 566 1200 560 L1200 600 L0 600 Z"/>
+</svg>
