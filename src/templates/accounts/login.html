@@ -1,0 +1,15 @@
+{% extends "auth_base.html" %}
+{% block title %}Ingresar{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Ingresar</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="actions"><button type="submit">Ingresar</button></div>
+  </form>
+  <p><a href="{% url 'accounts:password_reset' %}">¿Olvidaste tu contraseña?</a></p>
+  <p class="muted">¿No tienes cuenta? <a href="{% url 'accounts:signup' %}">Solicita acceso</a></p>
+</div>
+{% endblock %}

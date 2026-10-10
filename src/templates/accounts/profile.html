@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Mi perfil{% endblock %}
+{% block content %}
+<h1>Mi perfil</h1>
+<div class="card">
+  <p class="muted">{{ user.email }}{% if user.groups.all %} · Roles: {{ user.groups.all|join:", " }}{% endif %}</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit">Guardar</button></div>
+  </form>
+</div>
+<div class="card">
+  <h2>Seguridad</h2>
+  <p><a href="{% url 'accounts:password_change' %}">Cambiar contraseña</a></p>
+  <p>Verificación en dos pasos:
+    {% if has_2fa %}<strong>activada</strong> · {{ recovery_left }} códigos de recuperación disponibles
+    {% else %}<strong>desactivada</strong>{% endif %}
+    · <a href="{% url 'accounts:otp_setup' %}">{% if has_2fa %}Administrar{% else %}Activar{% endif %}</a>
+  </p>
+</div>
+{% endblock %}

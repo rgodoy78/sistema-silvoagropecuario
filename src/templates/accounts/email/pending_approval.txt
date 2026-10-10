@@ -1,0 +1,9 @@
+{% autoescape off %}Hay una nueva solicitud de acceso pendiente de revisión:
+
+Nombre: {{ user.get_full_name }}
+Correo: {{ user.email }}
+RUT:    {{ user.rut|default:"-" }}
+Cargo:  {{ user.position|default:"-" }}
+
+Revisar: {{ url }}
+{% endautoescape %}

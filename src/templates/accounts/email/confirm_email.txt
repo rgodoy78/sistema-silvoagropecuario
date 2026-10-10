@@ -1,0 +1,11 @@
+{% autoescape off %}Hola {{ user.first_name }}:
+
+Recibimos una solicitud de acceso al ERP Silvoagropecuario con este correo.
+Para confirmarlo, abre el siguiente enlace (vence en 48 horas):
+
+{{ url }}
+
+Después, un administrador revisará tu solicitud.
+
+Si no fuiste tú, ignora este mensaje.
+{% endautoescape %}

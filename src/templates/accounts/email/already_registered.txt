@@ -1,0 +1,9 @@
+{% autoescape off %}Hola:
+
+Alguien intentó registrarse en el ERP Silvoagropecuario con este correo, pero ya tienes una cuenta.
+
+Si olvidaste tu contraseña, puedes recuperarla aquí:
+{{ url }}
+
+Si no fuiste tú, ignora este mensaje.
+{% endautoescape %}

@@ -1,0 +1,15 @@
+{% extends "auth_base.html" %}
+{% block content %}
+<div class="card">
+  {% if invalid %}
+    <h1>Enlace no válido</h1>
+    <p>El enlace es incorrecto o venció. <a href="{% url 'accounts:signup' %}">Vuelve a registrarte</a> para recibir uno nuevo.</p>
+  {% elif done %}
+    <h1>Correo confirmado</h1>
+    <p>Tu solicitud quedó pendiente de aprobación. Te avisaremos por correo cuando un administrador la revise.</p>
+  {% else %}
+    <h1>Confirmar correo</h1>
+    <form method="post">{% csrf_token %}<button type="submit">Confirmar mi correo</button></form>
+  {% endif %}
+</div>
+{% endblock %}
