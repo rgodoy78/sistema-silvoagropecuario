@@ -1,0 +1,16 @@
+{% extends "auth_base.html" %}
+{% block title %}Verificación en dos pasos{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Verificación en dos pasos activada</h1>
+  <p>Te quedan <strong>{{ recovery_left }}</strong> códigos de recuperación.</p>
+  <div class="actions">
+    <a class="button secondary" href="{% url 'accounts:otp_recovery_codes' %}">Generar nuevos códigos</a>
+    {% if not user.is_administrator %}
+      <a class="button secondary" href="{% url 'accounts:otp_disable' %}">Desactivar 2FA</a>
+    {% else %}
+      <span class="muted">Obligatorio para administradores.</span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

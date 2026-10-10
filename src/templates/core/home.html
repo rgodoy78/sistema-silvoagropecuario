@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Hola, {{ user.get_short_name|default:user.email }}</h1>
+<div class="card">
+  <p>Bienvenido al ERP Silvoagropecuario.</p>
+  {% if perms.accounts.manage_users %}
+    <p><a href="{% url 'management:user_list' %}?estado=approval_pending">Revisar solicitudes de registro pendientes</a></p>
+  {% endif %}
+</div>
+{% endblock %}

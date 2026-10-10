@@ -1,0 +1,21 @@
+{% extends "auth_base.html" %}
+{% block title %}Activar verificación en dos pasos{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Activar verificación en dos pasos</h1>
+  <ol>
+    <li>Instala una app autenticadora (Google Authenticator, Microsoft Authenticator, Authy, 1Password…).</li>
+    <li>Escanea este código QR:</li>
+  </ol>
+  <div class="qr">{{ qr_svg|safe }}</div>
+  <p class="muted">¿No puedes escanearlo? Ingresa esta clave manualmente:<br><code class="secret">{{ secret }}</code></p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit">Activar</button></div>
+  </form>
+  <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+    {% csrf_token %}<button type="submit" class="secondary">Cerrar sesión</button>
+  </form>
+</div>
+{% endblock %}

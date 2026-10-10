@@ -1,12 +1,15 @@
+from django.contrib.auth.decorators import login_required
 from django.db import connection
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 
 
+@login_required
 @require_GET
 def home(request):
-    return HttpResponse("nexsurcode", content_type="text/plain; charset=utf-8")
+    return render(request, "core/home.html")
 
 
 @never_cache

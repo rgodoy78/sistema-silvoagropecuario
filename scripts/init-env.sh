@@ -7,9 +7,8 @@ umask 077
 rand() { python3 -c "import secrets; print(secrets.token_urlsafe($1))"; }
 
 if [[ ! -f .env ]]; then
-  admin_path="admin-$(python3 -c 'import secrets; print(secrets.token_hex(8))')/"
-  sed "s|^DJANGO_ADMIN_URL=.*|DJANGO_ADMIN_URL=${admin_path}|" .env.example > .env
-  echo "Creado .env (admin en /${admin_path})"
+  cp .env.example .env
+  echo "Creado .env"
 fi
 
 mkdir -p secrets
@@ -21,6 +20,9 @@ for name in django_secret_key:64 postgres_password:32 db_app_password:32; do
     echo "Creado $file"
   fi
 done
+# Contraseña de aplicación de Gmail: se completa a mano (vacío = sin SMTP).
+[[ -f secrets/email_password ]] || { : > secrets/email_password; echo "Creado secrets/email_password (vacío)"; }
+
 # El directorio es 700 (solo tu usuario). Los archivos deben ser legibles
 # por el usuario no-root dentro del contenedor (Docker rootless no permite
 # ajustar el dueño de los secretos).

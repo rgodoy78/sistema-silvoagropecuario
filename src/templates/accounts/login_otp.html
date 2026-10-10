@@ -1,0 +1,15 @@
+{% extends "auth_base.html" %}
+{% block title %}Verificación en dos pasos{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Verificación en dos pasos</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions">
+      <button type="submit">Verificar</button>
+      <a href="{% url 'accounts:login' %}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

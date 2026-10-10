@@ -24,10 +24,12 @@ x-django: &django
   environment:
     DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret_key
     DB_PASSWORD_FILE: /run/secrets/db_app_password
+    DJANGO_EMAIL_PASSWORD_FILE: /run/secrets/email_password
     DB_HOST: db
   secrets:
     - django_secret_key
     - db_app_password
+    - email_password
   volumes:
     # Código montado en solo lectura para editar en caliente.
     - ./src:/app:ro
@@ -140,3 +142,6 @@ secrets:
     file: ./secrets/postgres_password
   db_app_password:
     file: ./secrets/db_app_password
+  # Contraseña de aplicación de Gmail (vacía = sin SMTP configurado).
+  email_password:
+    file: ./secrets/email_password

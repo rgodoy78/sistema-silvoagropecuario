@@ -1,0 +1,9 @@
+{% autoescape off %}Hola {{ user.first_name }}:
+{% if user.status == "active" %}
+Tu solicitud de acceso al ERP Silvoagropecuario fue aprobada. Ya puedes ingresar:
+
+{{ url }}
+{% else %}
+Tu solicitud de acceso al ERP Silvoagropecuario no fue aprobada.
+Si crees que es un error, contacta al administrador.
+{% endif %}{% endautoescape %}

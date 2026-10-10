@@ -1,0 +1,14 @@
+{% extends "auth_base.html" %}
+{% block title %}Solicitar acceso{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Solicitar acceso</h1>
+  <p class="muted">Tras confirmar tu correo, un administrador revisará tu solicitud.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit">Enviar solicitud</button></div>
+  </form>
+  <p class="muted">¿Ya tienes cuenta? <a href="{% url 'accounts:login' %}">Ingresar</a></p>
+</div>
+{% endblock %}
