@@ -77,21 +77,20 @@
         <div class="preview-bar"><span></span><span></span><span></span><em>Vista de ejemplo · datos ilustrativos</em></div>
         <div class="dash-grid">
           <div class="panel span-2">
-            <h3>Producción por temporada</h3>
-            {% include "core/charts/line.html" with chart=charts.production title="Producción por temporada" %}
+            <div class="panel-head"><h3>Producción mensual</h3><p>Toneladas por mes · peak de fruta en enero, vendimia en marzo</p></div>
+            {% include "core/charts/line.html" with chart=charts.production title="Producción mensual en toneladas" unit="t" %}
           </div>
           <div class="panel">
-            <h3>Uso de suelo (ha)</h3>
-            {% include "core/charts/donut.html" with chart=charts.land_use title="Uso de suelo" unit="ha" %}
+            <div class="panel-head"><h3>Uso de suelo</h3><p>Hectáreas por rubro</p></div>
+            {% include "core/charts/stacked.html" with chart=charts.land_use title="Uso de suelo por rubro" unit="ha" id="suelo" %}
           </div>
           <div class="panel span-2">
-            <h3>Ventas por destino (miles de US$)</h3>
-            {% include "core/charts/bar.html" with chart=charts.destinations title="Ventas por destino" color=2 %}
+            <div class="panel-head"><h3>Ventas por destino</h3><p>Miles de US$ FOB · China concentra el 38 %</p></div>
+            {% include "core/charts/hbar.html" with chart=charts.destinations title="Ventas por destino en miles de US$" %}
           </div>
           <div class="panel">
-            <h3>Avance de cosecha</h3>
+            <div class="panel-head"><h3>Avance de cosecha</h3><p>Porcentaje cosechado de la temporada</p></div>
             {% include "core/charts/progress.html" with items=charts.harvest %}
-            <p class="progress-note">Porcentaje cosechado de la temporada.</p>
           </div>
         </div>
       </div>

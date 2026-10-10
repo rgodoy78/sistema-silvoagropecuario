@@ -80,70 +80,90 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .page-head p { margin: 0; }
 .section-label { display: flex; align-items: center; gap: .6rem; font-size: 1rem; text-transform: uppercase; letter-spacing: .06em; color: var(--forest-700); margin: 2rem 0 .75rem; }
 
-/* KPIs */
-.kpi-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1rem; }
-.kpi { position: relative; display: flex; flex-direction: column; gap: .2rem; padding: 1.1rem 1.25rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); color: var(--text); text-decoration: none; overflow: hidden; }
-.kpi::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--forest-600); }
-.kpi:nth-child(4n+2)::before { background: var(--wheat); }
-.kpi:nth-child(4n+3)::before { background: var(--andes); }
-.kpi:nth-child(4n+4)::before { background: var(--wine); }
-a.kpi:hover { border-color: var(--forest-600); color: var(--text); }
-.kpi-alert { background: var(--wheat-100); }
-.kpi-label { font-size: .8rem; font-weight: 600; color: var(--muted); }
-.kpi-value { font-size: 1.75rem; font-weight: 800; color: var(--forest-800); line-height: 1.2; }
-.kpi-value small { font-size: .9rem; font-weight: 600; color: var(--muted); }
-.kpi-foot { font-size: .8rem; font-weight: 600; color: var(--forest-600); }
-.trend { font-size: .78rem; font-weight: 600; color: var(--forest-600); }
-.trend-up::before { content: "▲ "; }
-.trend-down::before { content: "▼ "; }
+/* KPIs: etiqueta, valor, variación y tendencia. Sin franjas de color. */
+.kpi-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 1rem; }
+.kpi { display: flex; flex-direction: column; gap: .35rem; padding: 1.1rem 1.25rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); text-decoration: none; }
+a.kpi:hover { border-color: #b9c2b4; color: var(--text); }
+.kpi-alert { border-color: #e6cf98; background: #fffbf1; }
+.kpi-label { font-size: .78rem; font-weight: 500; color: var(--muted); }
+.kpi-row { display: flex; align-items: flex-end; justify-content: space-between; gap: .75rem; }
+.kpi-value { font-size: 1.65rem; font-weight: 600; color: var(--text); line-height: 1.15; letter-spacing: -.01em; }
+.kpi-value small { font-size: .85rem; font-weight: 500; color: var(--muted); }
+.kpi-foot { font-size: .78rem; font-weight: 600; color: var(--forest-600); }
+.spark { width: 88px; height: 28px; flex: none; overflow: visible; }
+.spark-line { fill: none; stroke: #b5bdb1; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.spark-end { fill: var(--c1); stroke: #fff; stroke-width: 2; }
+.delta { font-size: .75rem; font-weight: 600; }
+.delta-good { color: #2b6a3d; }
+.delta-bad { color: #a6322b; }
+.delta .muted { font-weight: 400; }
 
 /* Paneles de gráficos */
 .dash-grid { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 1rem; }
-.panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.25rem; box-shadow: var(--shadow); min-width: 0; }
-.panel h3 { font-size: .9rem; color: var(--forest-800); margin-bottom: .75rem; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem 1.35rem; min-width: 0; }
+.panel-head { margin-bottom: 1rem; }
+.panel-head h3, .panel h3 { font-size: .92rem; font-weight: 600; color: var(--text); margin: 0 0 .15rem; }
+.panel-head p { margin: 0; font-size: .78rem; color: var(--muted); }
 .span-2 { grid-column: span 2; }
 .span-3 { grid-column: 1 / -1; }
 
-/* ---------- Gráficos SVG ---------- */
-.chart { display: block; width: 100%; height: auto; overflow: visible; }
-.chart .grid { stroke: var(--line); stroke-width: 1; }
-.chart .axis { fill: var(--muted); font-size: 12px; font-family: var(--font); }
-.chart .value { fill: var(--text); font-size: 12px; font-weight: 700; font-family: var(--font); }
-.chart .line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
-.chart .area { stroke: none; opacity: .08; }
-.chart .dot { stroke: #fff; stroke-width: 1.5; }
-.chart .bar { transition: opacity .15s; }
-.chart .bar:hover, .chart .dot:hover { opacity: .8; }
-.series-1 { fill: var(--forest-600); stroke: var(--forest-600); background: var(--forest-600); }
-.series-2 { fill: var(--wheat); stroke: var(--wheat); background: var(--wheat); }
-.series-3 { fill: var(--wine); stroke: var(--wine); background: var(--wine); }
-.series-4 { fill: var(--andes); stroke: var(--andes); background: var(--andes); }
-.series-5 { fill: var(--earth); stroke: var(--earth); background: var(--earth); }
-.series-6 { fill: var(--leaf); stroke: var(--leaf); background: var(--leaf); }
-.chart .line.series-1, .chart .line.series-2, .chart .line.series-3, .chart .line.series-4, .chart .line.series-5, .chart .line.series-6 { fill: none; }
-.chart .area.series-1, .chart .area.series-2, .chart .area.series-3, .chart .area.series-4, .chart .area.series-5, .chart .area.series-6 { stroke: none; }
-.chart .bar[class*="series-"] { stroke: none; }
-.legend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; list-style: none; margin: .5rem 0 0; padding: 0; font-size: .8rem; color: var(--muted); }
-.legend li { display: inline-flex; align-items: center; gap: .4rem; }
-.legend strong { color: var(--text); margin-left: auto; padding-left: .5rem; white-space: nowrap; }
-.legend-col { flex-direction: column; gap: .45rem; }
-.legend-col li { display: flex; }
-.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; }
-.donut { width: 160px; height: 160px; flex: none; }
-.donut-track { fill: none; stroke: #edf0ea; stroke-width: 6; }
-.donut-seg { fill: none !important; stroke-width: 6; }
-.donut-total { font: 800 7px var(--font); fill: var(--forest-800); }
-.donut-unit { font: 600 3px var(--font); fill: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
-.donut-wrap .legend-col { flex: 1 1 140px; margin: 0; }
+/* ---------- Gráficos SVG ----------
+   Paleta categórica validada (luminosidad, saturación, daltonismo y contraste):
+   bosque, ocre, cordillera, vino. El texto nunca usa el color de la serie. */
+:root { --c1: #2f7d47; --c2: #c08a26; --c3: #2a77ad; --c4: #9d3c5c; --c1-track: #e4ede6; --ink-2: #4a544d; }
+.series-1 { fill: var(--c1); stroke: var(--c1); background: var(--c1); }
+.series-2 { fill: var(--c2); stroke: var(--c2); background: var(--c2); }
+.series-3 { fill: var(--c3); stroke: var(--c3); background: var(--c3); }
+.series-4 { fill: var(--c4); stroke: var(--c4); background: var(--c4); }
+.chart { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--font); }
+.chart .grid { stroke: #eef0eb; stroke-width: 1; }
+.chart .baseline { stroke: #c9cfc5; stroke-width: 1; }
+.chart .axis { fill: #7b857d; font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .label { fill: var(--ink-2); font-size: 12px; }
+.chart .value { fill: var(--text); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart .line { fill: none !important; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .end-dot { stroke: #fff !important; stroke-width: 2; }
+.chart .bar { stroke: none !important; }
+.chart .hit-area { fill: transparent; stroke: none; }
+.chart .crosshair { stroke: #c9cfc5; stroke-width: 1; opacity: 0; }
+.chart .hit:hover .crosshair { opacity: 1; }
+.chart .hit:hover .bar { opacity: .85; }
+.legend { display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; list-style: none; margin: 0 0 .75rem; padding: 0; font-size: .78rem; color: var(--ink-2); }
+.legend li { display: inline-flex; align-items: center; gap: .45rem; }
+.key { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+.key-sq { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: .55rem; vertical-align: 1px; }
 
-/* Avance (barras horizontales) */
-.progress-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem; }
-.progress-list li { display: grid; grid-template-columns: 1fr auto; gap: .3rem .75rem; font-size: .85rem; font-weight: 600; }
-.progress-list .pct { color: var(--forest-800); font-weight: 800; }
-.progress-list svg { grid-column: 1 / -1; width: 100%; height: 8px; display: block; }
-.progress-track { fill: #edf0ea; }
-.progress-note { font-size: .78rem; color: var(--muted); margin: 1rem 0 0; }
+/* Barras horizontales: filas HTML con barra SVG relativa */
+.hbars { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.hbars li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) 3.5rem; align-items: center; gap: .9rem; font-size: .82rem; color: var(--ink-2); }
+.hbars svg { width: 100%; height: 18px; display: block; }
+.hbars .num { color: var(--text); font-weight: 600; padding-left: 0 !important; }
+.hbars li:hover .bar { opacity: .85; }
+
+/* Parte del todo: cifra, barra apilada y desglose */
+.figure { margin: 0 0 .6rem; font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; }
+.figure span { font-size: .85rem; font-weight: 500; color: var(--muted); }
+.stacked { display: block; width: 100%; height: 12px; margin-bottom: 1rem; }
+table.breakdown { background: none; font-size: .82rem; }
+table.breakdown td { padding: .4rem 0; border-bottom: 1px solid #f0f2ed; color: var(--ink-2); }
+table.breakdown tr:last-child td { border-bottom: 0; }
+table.breakdown tbody tr:hover { background: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: .75rem !important; }
+
+/* Avance: medidor de un solo tono, la pista es un tono claro del mismo color */
+.meters { list-style: none; margin: 0; padding: 0; display: grid; gap: .95rem; }
+.meters li { display: grid; grid-template-columns: 1fr auto; gap: .35rem .75rem; font-size: .82rem; color: var(--ink-2); }
+.meters .num { color: var(--text); font-weight: 600; }
+.meters svg { grid-column: 1 / -1; width: 100%; height: 6px; display: block; border-radius: 3px; overflow: hidden; }
+.meter-track { fill: var(--c1-track); }
+.meter-fill { fill: var(--c1); }
+
+/* Tabla de datos bajo cada gráfico */
+.data-view { margin-top: .6rem; font-size: .78rem; }
+.data-view summary { cursor: pointer; color: var(--muted); font-weight: 500; width: max-content; }
+.data-view summary:hover { color: var(--forest-600); }
+.data-view table { margin-top: .5rem; font-size: .78rem; }
+.data-view th, .data-view td { padding: .35rem .5rem; }
 
 /* ---------- Formularios ---------- */
 form div { margin-bottom: .9rem; }
@@ -284,9 +304,12 @@ code.secret { word-break: break-all; font-size: .95rem; }
   .section { padding: 3rem 0; }
   .card, .auth-main .card { padding: 1.25rem; }
   .kpi-value { font-size: 1.5rem; }
-  /* Gráficos legibles en celular: ancho mínimo y desplazamiento dentro del panel. */
-  .panel { overflow-x: auto; }
-  .panel .chart { min-width: 460px; }
+  /* Gráficos en celular: el SVG se reduce a la mitad, así que el texto y las
+     líneas se agrandan en unidades del SVG para verse al tamaño normal. */
+  .chart .axis, .chart .value { font-size: 20px; }
+  .chart .line { stroke-width: 3.5; }
+  .chart .end-dot { r: 6; }
+  .hbars li { grid-template-columns: 6.5rem minmax(0, 1fr) 3rem; gap: .6rem; font-size: .78rem; }
   .preview .dash-grid { padding: .75rem; }
 }
 @media (prefers-reduced-motion: reduce) {

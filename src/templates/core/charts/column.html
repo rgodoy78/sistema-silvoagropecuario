@@ -1,0 +1,19 @@
+{% load l10n %}{# Coordenadas SVG: siempre con punto decimal, sin localizar. #}{% localize off %}<svg class="chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img" aria-label="{{ title }}">
+  {% for g in chart.grid %}
+  <line x1="{{ chart.left }}" x2="{{ chart.right }}" y1="{{ g.y }}" y2="{{ g.y }}" class="{% if forloop.first %}baseline{% else %}grid{% endif %}"/>
+  <text x="{{ chart.left|add:'-10' }}" y="{{ g.y }}" class="axis" text-anchor="end" dominant-baseline="middle">{{ g.label }}</text>
+  {% endfor %}
+  {% for c in chart.columns %}
+  <g class="hit">
+    <rect x="{{ c.hit_x }}" y="{{ chart.top }}" width="{{ c.hit_w }}" height="{{ chart.bottom|add:'-20' }}" class="hit-area"/>
+    {% if c.path %}<path d="{{ c.path }}" class="bar series-1"/>{% endif %}
+    {% if c.show_value %}<text x="{{ c.cx }}" y="{{ c.y }}" dy="-7" class="value" text-anchor="middle">{{ c.value }}</text>{% endif %}
+    <title>{{ c.label }}: {{ c.value }}</title>
+  </g>
+  <text x="{{ c.cx }}" y="{{ chart.bottom }}" dy="18" class="axis" text-anchor="middle">{{ c.label }}</text>
+  {% endfor %}
+</svg>
+<details class="data-view">
+  <summary>Ver datos</summary>
+  <table><tbody>{% for label, value in chart.rows %}<tr><td>{{ label }}</td><td class="num">{{ value }}</td></tr>{% endfor %}</tbody></table>
+</details>{% endlocalize %}

@@ -85,8 +85,8 @@ class DashboardTests(TestCase):
         self.assertContains(response, "Cuentas de usuario")
         users = response.context["users"]
         self.assertEqual((users["active"], users["pending"], users["with_2fa"]), (1, 1, 1))
-        self.assertEqual(len(users["signups"]["bars"]), 6)
-        self.assertEqual(users["signups"]["bars"][-1]["value"], "2")
+        self.assertEqual(len(users["signups"]["columns"]), 6)
+        self.assertEqual(users["signups"]["columns"][-1]["value"], "2")
 
 
 class ChartTests(SimpleTestCase):
@@ -94,23 +94,29 @@ class ChartTests(SimpleTestCase):
         self.assertEqual(charts.fmt(1234567), "1.234.567")
         self.assertEqual(charts.fmt(2.5), "2,5")
 
-    def test_bar_heights_are_proportional(self):
-        chart = charts.bar_chart(["a", "b"], [50, 100])
-        a, b = chart["bars"]
-        self.assertAlmostEqual(a["h"] * 2, b["h"], delta=0.2)
+    def test_columns_are_proportional_and_label_only_peak_and_last(self):
+        chart = charts.column_chart(["a", "b", "c"], [50, 100, 20])
         self.assertEqual(chart["grid"][-1]["label"], "100")
+        self.assertEqual([c["show_value"] for c in chart["columns"]], [False, True, True])
 
     def test_integer_axis_has_whole_steps(self):
-        labels = [g["label"] for g in charts.bar_chart(["a"], [1], integer=True)["grid"]]
+        labels = [g["label"] for g in charts.column_chart(["a"], [1], integer=True)["grid"]]
         self.assertEqual(labels, ["0", "1", "2", "3", "4"])
-        labels = [g["label"] for g in charts.bar_chart(["a"], [9], integer=True)["grid"]]
+        labels = [g["label"] for g in charts.column_chart(["a"], [9], integer=True)["grid"]]
         self.assertTrue(all("," not in label for label in labels))
 
-    def test_empty_values_do_not_crash(self):
-        self.assertEqual(charts.bar_chart(["a"], [0])["bars"][0]["h"], 0)
-        self.assertEqual(charts.donut_chart([])["segments"], [])
+    def test_hbar_sorts_descending(self):
+        chart = charts.hbar_chart(["a", "b", "c"], [10, 30, 20])
+        self.assertEqual([b["label"] for b in chart["bars"]], ["b", "c", "a"])
+        self.assertEqual([b["pct"] for b in chart["bars"]], [100, 66.7, 33.3])
 
-    def test_donut_segments_add_up(self):
-        chart = charts.donut_chart([("x", 1), ("y", 3)])
+    def test_empty_values_do_not_crash(self):
+        self.assertEqual(charts.column_chart(["a"], [0])["columns"][0]["path"], "")
+        self.assertEqual(charts.stacked_bar([])["segments"], [])
+
+    def test_stacked_bar_percentages_and_gaps(self):
+        chart = charts.stacked_bar([("x", 1), ("y", 3)], width=102, gap=2)
         self.assertEqual([s["pct"] for s in chart["segments"]], [25, 75])
         self.assertEqual(chart["total"], "4")
+        x, y = chart["segments"]
+        self.assertAlmostEqual(y["x"] - (x["x"] + x["w"]), 2, delta=0.1)

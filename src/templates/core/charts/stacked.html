@@ -1,0 +1,14 @@
+{% load l10n %}{# Coordenadas SVG: siempre con punto decimal, sin localizar. #}{% localize off %}<p class="figure">{{ chart.total }} <span>{% if chart.total == "1" and unit_one %}{{ unit_one }}{% else %}{{ unit }}{% endif %}</span></p>
+<svg class="stacked" viewBox="0 0 {{ chart.width }} {{ chart.height }}" preserveAspectRatio="none" role="img" aria-label="{{ title }}">
+  <defs><clipPath id="clip-{{ id }}"><rect width="{{ chart.width }}" height="{{ chart.height }}" rx="4"/></clipPath></defs>
+  <g clip-path="url(#clip-{{ id }})">
+    {% for s in chart.segments %}<rect x="{{ s.x }}" width="{{ s.w }}" height="{{ chart.height }}" class="series-{{ s.color }}"><title>{{ s.label }}: {{ s.value }} {{ unit }} ({{ s.pct }} %)</title></rect>{% endfor %}
+  </g>
+</svg>
+<table class="breakdown">
+  <tbody>
+    {% for s in chart.segments %}
+    <tr><td><span class="key-sq series-{{ s.color }}"></span>{{ s.label }}</td><td class="num">{{ s.value }}</td><td class="num muted">{{ s.pct }} %</td></tr>
+    {% endfor %}
+  </tbody>
+</table>{% endlocalize %}
