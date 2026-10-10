@@ -6,6 +6,11 @@ updates:
     groups:
       python:
         patterns: ["*"]
+    # Django se mantiene en la LTS (ver requirements.in): solo parches de
+    # seguridad. El salto a la siguiente LTS se hace a mano.
+    ignore:
+      - dependency-name: django
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }
