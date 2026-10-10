@@ -1,0 +1,9 @@
+{% load l10n %}{% localize off %}<ul class="hbars" role="list" aria-label="{{ title }}">
+  {% for b in chart.bars %}
+  <li title="{{ b.label }}: {{ b.value }}">
+    <span class="hbar-label">{{ b.label }}</span>
+    <svg viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true"><rect width="{{ b.pct }}" height="18" class="bar series-1"/></svg>
+    <span class="num">{{ b.value }}</span>
+  </li>
+  {% endfor %}
+</ul>{% endlocalize %}

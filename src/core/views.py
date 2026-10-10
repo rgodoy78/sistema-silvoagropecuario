@@ -20,24 +20,28 @@ MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", 
 # Datos ilustrativos para la portada y el panel mientras no existan los módulos
 # productivos. Las plantillas los rotulan siempre como "datos de ejemplo".
 SAMPLE_SEASON = ["Oct", "Nov", "Dic", "Ene", "Feb", "Mar", "Abr"]
+# Misma unidad (toneladas) en un solo eje; la madera se mide aparte.
 SAMPLE_PRODUCTION = [
-    ("Fruta (t)", [120, 340, 910, 1280, 1150, 760, 380]),
-    ("Uva vinífera (t)", [0, 0, 40, 210, 690, 980, 420]),
-    ("Madera (m³ × 10)", [520, 540, 560, 530, 550, 580, 600]),
+    ("Fruta", [120, 340, 910, 1280, 1150, 760, 380]),
+    ("Uva vinífera", [0, 0, 40, 210, 690, 980, 420]),
 ]
 SAMPLE_DESTINATIONS = (
-    ["China", "EE.UU.", "Europa", "Corea", "Japón", "Latam"],
+    ["China", "EE.UU.", "Unión Europea", "Corea del Sur", "Japón", "Latinoamérica"],
     [4200, 2600, 1900, 900, 750, 620],
 )
 SAMPLE_LAND_USE = [("Plantación forestal", 820), ("Frutales", 310), ("Viñedos", 145), ("Praderas y cultivos", 225)]
-SAMPLE_HARVEST = [("Cerezas", 100), ("Arándanos", 85), ("Uva vinífera", 40), ("Manzanas", 20), ("Raleo forestal", 65)]
+SAMPLE_HARVEST = [("Cerezas", 100), ("Arándanos", 85), ("Raleo forestal", 65), ("Uva vinífera", 40), ("Manzanas", 20)]
+# "good" indica si la variación es favorable (un costo que baja es bueno).
 SAMPLE_KPIS = [
-    {"label": "Superficie gestionada", "value": "1.500", "unit": "ha", "trend": "+4,2 %", "up": True},
-    {"label": "Producción temporada", "value": "8.540", "unit": "t", "trend": "+11,8 %", "up": True},
-    {"label": "Ventas exportación", "value": "US$ 10,9", "unit": "M", "trend": "+6,5 %", "up": True},
-    {"label": "Costo por hectárea", "value": "$ 1,82", "unit": "M", "trend": "−2,1 %", "up": False},
+    {"label": "Superficie gestionada", "value": "1.500", "unit": "ha", "delta": "+4,2 %", "up": True, "good": True,
+     "trend": [1380, 1390, 1400, 1410, 1420, 1425, 1440, 1450, 1460, 1470, 1490, 1500]},
+    {"label": "Producción temporada", "value": "8.540", "unit": "t", "delta": "+11,8 %", "up": True, "good": True,
+     "trend": [6900, 7100, 7000, 7350, 7400, 7600, 7700, 7900, 8000, 8200, 8350, 8540]},
+    {"label": "Ventas exportación", "value": "US$ 10,9", "unit": "M", "delta": "+6,5 %", "up": True, "good": True,
+     "trend": [9.6, 9.8, 9.7, 10.0, 10.1, 10.0, 10.3, 10.4, 10.5, 10.6, 10.8, 10.9]},
+    {"label": "Costo por hectárea", "value": "$ 1,82", "unit": "M", "delta": "−2,1 %", "up": False, "good": True,
+     "trend": [1.90, 1.91, 1.89, 1.88, 1.88, 1.87, 1.86, 1.86, 1.85, 1.84, 1.83, 1.82]},
 ]
-
 
 CC = "https://creativecommons.org/licenses/{}/deed.es"
 # Fotografías de Wikimedia Commons (recortadas y redimensionadas). Las
@@ -70,13 +74,14 @@ PHOTO_CREDITS = [
 def sample_charts():
     return {
         "production": charts.line_chart(SAMPLE_SEASON, SAMPLE_PRODUCTION),
-        "destinations": charts.bar_chart(*SAMPLE_DESTINATIONS),
-        "land_use": charts.donut_chart(SAMPLE_LAND_USE),
-        "harvest": [
-            {"label": label, "pct": pct, "color": n % charts.SERIES_COLORS + 1}
-            for n, (label, pct) in enumerate(SAMPLE_HARVEST)
-        ],
+        "destinations": charts.hbar_chart(*SAMPLE_DESTINATIONS),
+        "land_use": charts.stacked_bar(SAMPLE_LAND_USE),
+        "harvest": [{"label": label, "pct": pct} for label, pct in SAMPLE_HARVEST],
     }
+
+
+def sample_kpis():
+    return [{**k, "spark": charts.sparkline(k["trend"])} for k in SAMPLE_KPIS]
 
 
 @require_GET
@@ -115,10 +120,10 @@ def _user_stats():
         "active": by_status.get(User.Status.ACTIVE, 0),
         "pending": by_status.get(User.Status.APPROVAL_PENDING, 0),
         "with_2fa": TOTPDevice.objects.filter(confirmed=True).values("user").distinct().count(),
-        "signups": charts.bar_chart(
+        "signups": charts.column_chart(
             [MONTHS[m - 1] for _, m in months], [joined.get(ym, 0) for ym in months], integer=True
         ),
-        "by_status": charts.donut_chart([(label, n) for label, n in statuses if n]),
+        "by_status": charts.stacked_bar([(label, n) for label, n in statuses if n]),
     }
 
 
@@ -129,7 +134,7 @@ def home(request):
     # Temporada agrícola del hemisferio sur: de julio a junio.
     now = timezone.localtime()
     start = now.year if now.month >= 7 else now.year - 1
-    context = {"charts": sample_charts(), "kpis": SAMPLE_KPIS, "season": f"{start}–{start + 1}"}
+    context = {"charts": sample_charts(), "kpis": sample_kpis(), "season": f"{start}–{start + 1}"}
     if request.user.has_perm("accounts.manage_users"):
         context["users"] = _user_stats()
     return render(request, "core/home.html", context)

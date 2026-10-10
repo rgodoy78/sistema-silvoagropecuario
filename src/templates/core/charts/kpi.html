@@ -1,0 +1,11 @@
+{% load l10n %}<div class="kpi">
+  <span class="kpi-label">{{ k.label }}</span>
+  <div class="kpi-row">
+    <span class="kpi-value">{{ k.value }} <small>{{ k.unit }}</small></span>
+    {% if k.spark %}{% localize off %}<svg class="spark" viewBox="0 0 {{ k.spark.width }} {{ k.spark.height }}" aria-hidden="true">
+      <polyline points="{{ k.spark.points }}" class="spark-line"/>
+      <circle cx="{{ k.spark.end_x }}" cy="{{ k.spark.end_y }}" r="3" class="spark-end"/>
+    </svg>{% endlocalize %}{% endif %}
+  </div>
+  {% if k.delta %}<span class="delta {% if k.good %}delta-good{% else %}delta-bad{% endif %}"><span aria-hidden="true">{% if k.up %}↑{% else %}↓{% endif %}</span> {{ k.delta }} <span class="muted">vs. temporada anterior</span></span>{% endif %}
+</div>

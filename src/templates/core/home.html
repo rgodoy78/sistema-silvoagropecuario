@@ -18,16 +18,16 @@
       <span class="kpi-label">Solicitudes pendientes</span><span class="kpi-value">{{ users.pending }}</span>
       <span class="kpi-foot">Revisar solicitudes →</span>
     </a>
-    <div class="kpi"><span class="kpi-label">Con verificación en dos pasos</span><span class="kpi-value">{{ users.with_2fa }}</span></div>
+    <div class="kpi"><span class="kpi-label">Con verificación en dos pasos</span><span class="kpi-value">{{ users.with_2fa }} <small>de {{ users.active }}</small></span></div>
   </div>
   <div class="dash-grid">
     <div class="panel span-2">
-      <h3>Registros por mes</h3>
-      {% include "core/charts/bar.html" with chart=users.signups title="Registros por mes" %}
+      <div class="panel-head"><h3>Registros por mes</h3><p>Cuentas creadas en los últimos 6 meses</p></div>
+      {% include "core/charts/column.html" with chart=users.signups title="Registros por mes" %}
     </div>
     <div class="panel">
-      <h3>Cuentas por estado</h3>
-      {% include "core/charts/donut.html" with chart=users.by_status title="Cuentas por estado" unit="cuentas" %}
+      <div class="panel-head"><h3>Cuentas por estado</h3><p>Total de cuentas registradas</p></div>
+      {% include "core/charts/stacked.html" with chart=users.by_status title="Cuentas por estado" unit="cuentas" unit_one="cuenta" id="estado" %}
     </div>
   </div>
 </section>
@@ -37,31 +37,24 @@
   <h2 id="temporada" class="section-label">Temporada <span class="badge badge-sample">Datos de ejemplo</span></h2>
   <p class="muted small">Estos indicadores se conectarán a los módulos productivos cuando estén disponibles.</p>
   <div class="kpi-grid kpi-grid-4">
-    {% for k in kpis %}
-    <div class="kpi">
-      <span class="kpi-label">{{ k.label }}</span>
-      <span class="kpi-value">{{ k.value }} <small>{{ k.unit }}</small></span>
-      <span class="trend {% if k.up %}trend-up{% else %}trend-down{% endif %}">{{ k.trend }} vs. temporada anterior</span>
-    </div>
-    {% endfor %}
+    {% for k in kpis %}{% include "core/charts/kpi.html" %}{% endfor %}
   </div>
   <div class="dash-grid">
     <div class="panel span-2">
-      <h3>Producción por temporada</h3>
-      {% include "core/charts/line.html" with chart=charts.production title="Producción por temporada" %}
+      <div class="panel-head"><h3>Producción mensual</h3><p>Toneladas por mes · peak de fruta en enero, vendimia en marzo</p></div>
+      {% include "core/charts/line.html" with chart=charts.production title="Producción mensual en toneladas" unit="t" %}
     </div>
     <div class="panel">
-      <h3>Uso de suelo (ha)</h3>
-      {% include "core/charts/donut.html" with chart=charts.land_use title="Uso de suelo" unit="ha" %}
+      <div class="panel-head"><h3>Uso de suelo</h3><p>Hectáreas por rubro</p></div>
+      {% include "core/charts/stacked.html" with chart=charts.land_use title="Uso de suelo por rubro" unit="ha" id="suelo" %}
     </div>
     <div class="panel span-2">
-      <h3>Ventas por destino (miles de US$)</h3>
-      {% include "core/charts/bar.html" with chart=charts.destinations title="Ventas por destino" color=2 %}
+      <div class="panel-head"><h3>Ventas por destino</h3><p>Miles de US$ FOB · China concentra el 38 %</p></div>
+      {% include "core/charts/hbar.html" with chart=charts.destinations title="Ventas por destino en miles de US$" %}
     </div>
     <div class="panel">
-      <h3>Avance de cosecha</h3>
+      <div class="panel-head"><h3>Avance de cosecha</h3><p>Porcentaje cosechado de la temporada</p></div>
       {% include "core/charts/progress.html" with items=charts.harvest %}
-      <p class="progress-note">Porcentaje cosechado de la temporada.</p>
     </div>
   </div>
 </section>
