@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ farm }}{% endblock %}
+{% block extra_head %}{% include "livestock/_map_assets.html" %}{% endblock %}
 {% block content %}
 <p><a href="{% url 'livestock:farm_list' %}">« Predios</a></p>
 <div class="page-head">
@@ -10,6 +11,22 @@
   </div>
   {% if current_membership.can_write %}<a class="button secondary" href="{% url 'livestock:farm_edit' farm.pk %}">Editar predio</a>{% endif %}
 </div>
+<h2 class="section-label">Mapa</h2>
+<div class="map" data-map="map-data"{% if esri_key %} data-key="{{ esri_key }}"{% endif %}></div>
+{{ map_data|json_script:"map-data" }}
+{% if current_membership.can_write %}
+<div class="actions map-actions">
+  <a class="button small secondary" href="{% url 'livestock:boundary_edit' 'predio' farm.pk %}">{% if farm.boundary %}Editar{% else %}Dibujar{% endif %} límite del predio</a>
+  <form method="post" action="{% url 'livestock:paddocks_from_kml' farm.pk %}" enctype="multipart/form-data" class="inline-kml" novalidate>
+    {% csrf_token %}
+    <label for="kml-potreros" class="small">Potreros desde Google Earth (.kml/.kmz):</label>
+    <input type="file" id="kml-potreros" name="file" accept=".kml,.kmz">
+    <button type="submit" class="small secondary">Importar potreros</button>
+  </form>
+</div>
+<p class="muted small">En el KML, cada polígono con nombre crea el potrero de ese nombre, o actualiza su límite si ya existe.</p>
+{% endif %}
+
 <h2 class="section-label">Potreros</h2>
 <div class="table-wrap">
 <table>
@@ -20,7 +37,7 @@
       <td>{{ p.name }}</td>
       <td class="num">{{ p.area_ha|floatformat:"-2"|default:"-" }}</td>
       <td class="num">{{ p.heads }}</td>
-      <td>{% if current_membership.can_write and not p.heads %}<form method="post" action="{% url 'livestock:paddock_delete' p.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}</td>
+      <td>{% if current_membership.can_write %}<a href="{% url 'livestock:boundary_edit' 'potrero' p.pk %}">{% if p.boundary %}Editar límite{% else %}Dibujar{% endif %}</a>{% if not p.heads %} · <form method="post" action="{% url 'livestock:paddock_delete' p.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}{% endif %}</td>
     </tr>
   {% empty %}
     <tr><td colspan="4" class="muted">Sin potreros.</td></tr>

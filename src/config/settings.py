@@ -204,7 +204,8 @@ CONTENT_SECURITY_POLICY = {
         "default-src": [SELF],
         "script-src": [SELF],
         "style-src": [SELF],
-        "img-src": [SELF, "data:"],
+        # Teselas de imagen satelital de Esri (mapas de predios).
+        "img-src": [SELF, "data:", "https://ibasemaps-api.arcgis.com"],
         "font-src": [SELF],
         "connect-src": [SELF],
         "object-src": [NONE],
@@ -232,6 +233,11 @@ EMAIL_USE_TLS = True
 EMAIL_TIMEOUT = 10
 EMAIL_HOST_USER = env("DJANGO_EMAIL_USER", "")
 EMAIL_HOST_PASSWORD = optional_secret("DJANGO_EMAIL_PASSWORD")
+
+# --- Mapas ------------------------------------------------------------------
+# API key de ArcGIS Location Platform (solo privilegio de basemaps y restringida
+# por dominio en el panel de ArcGIS: se envía al navegador en las URL de teselas).
+ESRI_API_KEY = optional_secret("ESRI_API_KEY")
 DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "webmaster@localhost")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 

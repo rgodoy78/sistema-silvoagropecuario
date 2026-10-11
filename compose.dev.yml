@@ -25,11 +25,13 @@ x-django: &django
     DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret_key
     DB_PASSWORD_FILE: /run/secrets/db_app_password
     DJANGO_EMAIL_PASSWORD_FILE: /run/secrets/email_password
+    ESRI_API_KEY_FILE: /run/secrets/esri_api_key
     DB_HOST: db
   secrets:
     - django_secret_key
     - db_app_password
     - email_password
+    - esri_api_key
   volumes:
     # Código montado en solo lectura para editar en caliente.
     - ./src:/app:ro
@@ -145,3 +147,6 @@ secrets:
   # Contraseña de aplicación de Gmail (vacía = sin SMTP configurado).
   email_password:
     file: ./secrets/email_password
+  # API key de ArcGIS Location Platform para la imagen satelital (vacía = mapa sin fondo).
+  esri_api_key:
+    file: ./secrets/esri_api_key

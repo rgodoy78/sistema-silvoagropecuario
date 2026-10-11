@@ -13,12 +13,14 @@ from livestock.forms import (
     AnimalEditForm,
     ExitForm,
     FarmForm,
+    KmlForm,
     LotForm,
     PaddockForm,
     TransferForm,
     WeighingForm,
     WeighingImportForm,
 )
+from livestock.maps import map_context
 from livestock.models import Animal, Farm, Lot, Movement, Paddock, Weaning, Weighing
 from organizations.decorators import organization_required, organization_write_required
 
@@ -313,6 +315,8 @@ def farm_detail(request, pk):
         "paddocks": paddocks,
         "heads": farm.animals.filter(status=Animal.Status.ACTIVE).count(),
         "paddock_form": PaddockForm(organization=request.organization, farm=farm),
+        "kml_form": KmlForm(),
+        **map_context(farm),
     }
     return render(request, "livestock/farm_detail.html", context)
 

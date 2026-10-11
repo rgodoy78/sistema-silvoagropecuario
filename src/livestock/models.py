@@ -46,6 +46,7 @@ class Farm(OrganizationScopedModel):
         "superficie (ha)", max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
     )
     notes = models.TextField("notas", blank=True)
+    boundary = models.JSONField("límite", null=True, blank=True, editable=False, help_text="Polygon GeoJSON (WGS84).")
 
     class Meta:
         verbose_name = "predio"
@@ -65,6 +66,7 @@ class Paddock(OrganizationScopedModel):
     area_ha = models.DecimalField(
         "superficie (ha)", max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
     )
+    boundary = models.JSONField("límite", null=True, blank=True, editable=False, help_text="Polygon GeoJSON (WGS84).")
 
     class Meta:
         verbose_name = "potrero"

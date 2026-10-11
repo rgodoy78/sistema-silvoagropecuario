@@ -1,3 +1,4 @@
+import json
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -5,6 +6,7 @@ from django import forms
 
 from accounts.validators import normalize_rut, validate_rut
 from livestock import services
+from livestock.geo import GeometryError, clean_polygon
 from livestock.models import (
     Animal,
     Breed,
@@ -425,3 +427,32 @@ class CostForm(OrganizationScopedForm):
         if target == Cost.Target.SELECTED and not self.preselected:
             self.add_error("target", "Selecciona los animales en el listado.")
         return cleaned
+
+
+# --- Mapas ------------------------------------------------------------------
+
+
+class BoundaryForm(forms.Form):
+    geojson = forms.CharField(widget=forms.HiddenInput, required=False)
+    update_area = forms.BooleanField(label="Usar la superficie calculada del polígono", required=False, initial=True)
+
+    def clean_geojson(self):
+        text = self.cleaned_data["geojson"].strip()
+        if not text:
+            raise forms.ValidationError("Dibuja el polígono en el mapa (al menos 3 puntos) o importa un KML.")
+        try:
+            return clean_polygon(json.loads(text))
+        except (ValueError, GeometryError) as e:
+            raise forms.ValidationError(str(e) if isinstance(e, GeometryError) else "Polígono no válido.") from e
+
+
+class KmlForm(forms.Form):
+    file = forms.FileField(label="Archivo de Google Earth (.kml o .kmz)", help_text="Máximo 5 MB.")
+
+    def clean_file(self):
+        upload = self.cleaned_data["file"]
+        if upload.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("El archivo supera los 5 MB.")
+        if not upload.name.lower().endswith((".kml", ".kmz")):
+            raise forms.ValidationError("Sube un archivo .kml o .kmz exportado desde Google Earth.")
+        return upload

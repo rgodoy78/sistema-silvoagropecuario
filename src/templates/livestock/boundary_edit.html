@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Límite de {{ obj.name }}{% endblock %}
+{% block extra_head %}{% include "livestock/_map_assets.html" %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'livestock:farm_detail' farm.pk %}">« {{ farm }}</a></p>
+<h1>Límite de {% if kind == "potrero" %}potrero {{ obj.name }}{% else %}predio {{ obj.name }}{% endif %}</h1>
+{% if not esri_key %}<div class="alert alert-info">El fondo satelital aún no está configurado: puedes dibujar sobre el fondo neutro o importar un KML.</div>{% endif %}
+<div class="map-tools">
+  <p class="small muted">Haz clic en el mapa para agregar puntos. Arrastra un punto para moverlo; clic derecho para eliminarlo.</p>
+  <div class="actions">
+    <button type="button" class="small secondary" data-map-undo>Deshacer punto</button>
+    <button type="button" class="small secondary" data-map-clear>Borrar todo</button>
+    <span class="map-area">Superficie: <strong data-map-area>—</strong></span>
+  </div>
+</div>
+<div class="map map-tall" data-map="map-data"{% if esri_key %} data-key="{{ esri_key }}"{% endif %}></div>
+{{ map_data|json_script:"map-data" }}
+<div class="dash-grid">
+  <form method="post" class="card span-2" novalidate>
+    {% csrf_token %}
+    {{ form.geojson.errors }}
+    <input type="hidden" name="geojson" data-map-input value="">
+    {{ form.update_area.as_field_group }}
+    <div class="actions">
+      <button type="submit">Guardar límite</button>
+      {% if obj.boundary %}<button type="submit" name="accion" value="borrar" class="link">Quitar límite</button>{% endif %}
+    </div>
+  </form>
+  <form method="post" enctype="multipart/form-data" class="card" novalidate>
+    {% csrf_token %}
+    <h3>Importar desde Google Earth</h3>
+    {{ kml_form }}
+    <button type="submit" class="secondary">Cargar en el mapa</button>
+  </form>
+</div>
+{% endblock %}
