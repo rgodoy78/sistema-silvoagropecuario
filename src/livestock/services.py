@@ -10,7 +10,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
 
 from django.db import models, transaction
 from django.db.models import Count
@@ -18,8 +18,10 @@ from django.db.models import Count
 from livestock.models import (
     Animal,
     Calving,
+    CostAllocation,
     Movement,
     PregnancyCheck,
+    PriceReference,
     Service,
     Treatment,
     Weaning,
@@ -419,3 +421,139 @@ def animals_in_withdrawal(organization, on=None):
         .order_by("animal_id", "-withdrawal_until")
         .distinct("animal_id")
     )
+
+
+# --- Costos y márgenes ------------------------------------------------------
+
+
+@transaction.atomic
+def register_cost(cost, animals, user):
+    """Guarda el costo y lo reparte en partes iguales entre los animales (el último absorbe el redondeo)."""
+    cost.amount = Decimal(cost.amount)
+    cost.created_by = user
+    cost.heads = len(animals)
+    cost.save()
+    if animals:
+        share = (cost.amount / len(animals)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        allocations = [
+            CostAllocation(organization=cost.organization, cost=cost, animal=a, amount=share) for a in animals
+        ]
+        allocations[-1].amount = cost.amount - share * (len(animals) - 1)
+        CostAllocation.objects.bulk_create(allocations)
+    return cost
+
+
+def latest_prices(organization):
+    """{categoría: precio por kg} con el precio vigente más reciente de cada categoría."""
+    prices = {}
+    refs = PriceReference.objects.for_org(organization).filter(date__lte=date.today()).order_by("category", "-date")
+    for ref in refs:
+        prices.setdefault(ref.category, ref.price_per_kg)
+    return prices
+
+
+@dataclass
+class Economics:
+    purchase: Decimal = Decimal(0)
+    costs: Decimal = Decimal(0)
+    sale: Decimal | None = None
+    first_weight: Decimal | None = None
+    last_weight: Decimal | None = None
+    value: Decimal | None = None  # valor estimado si sigue en existencia
+
+    @property
+    def kg_gained(self):
+        if self.first_weight is None or self.last_weight is None:
+            return None
+        return self.last_weight - self.first_weight
+
+    @property
+    def income(self):
+        return self.sale if self.sale is not None else self.value
+
+    @property
+    def margin(self):
+        return None if self.income is None else self.income - self.purchase - self.costs
+
+    @property
+    def cost_per_kg(self):
+        gained = self.kg_gained
+        return self.costs / gained if gained and gained > 0 and self.costs else None
+
+
+def herd_economics(organization, animals):
+    """Economía de cada animal: {animal_id: Economics}. Pocas consultas, sirve para rebaños grandes."""
+    animals = list(animals)
+    ids = [a.pk for a in animals]
+    result = {pk: Economics() for pk in ids}
+    allocations = (
+        CostAllocation.objects.for_org(organization).filter(animal_id__in=ids)
+        .order_by().values_list("animal_id").annotate(total=models.Sum("amount"))
+    )
+    for pk, total in allocations:
+        result[pk].costs = total
+    money = (
+        Movement.objects.for_org(organization)
+        .filter(animal_id__in=ids, kind__in=[Movement.Kind.PURCHASE, Movement.Kind.SALE], price_clp__isnull=False)
+        .order_by().values_list("animal_id", "kind").annotate(total=models.Sum("price_clp"))
+    )
+    for pk, kind, total in money:
+        if kind == Movement.Kind.PURCHASE:
+            result[pk].purchase = total
+        else:
+            result[pk].sale = total
+    weights = (
+        Weighing.objects.for_org(organization).filter(animal_id__in=ids)
+        .order_by("animal_id", "date", "created_at").values_list("animal_id", "weight_kg")
+    )
+    for pk, kg in weights:
+        econ = result[pk]
+        if econ.first_weight is None:
+            econ.first_weight = kg
+        econ.last_weight = kg
+    prices = latest_prices(organization)
+    for a in animals:
+        econ = result[a.pk]
+        if a.is_active and econ.last_weight and a.category in prices:
+            econ.value = econ.last_weight * prices[a.category]
+    return result
+
+
+def sum_present(values):
+    values = [v for v in values if v is not None]
+    return sum(values, Decimal(0)) if values else None
+
+
+def lot_economics(organization):
+    """Resumen por lote de los animales en existencia: costo acumulado, kg ganados, $/kg y margen estimado."""
+    animals = list(
+        Animal.objects.for_org(organization).filter(status=Animal.Status.ACTIVE).select_related("lot")
+    )
+    econ = herd_economics(organization, animals)
+    groups = defaultdict(list)
+    for a in animals:
+        groups[a.lot.name if a.lot else "Sin lote"].append(econ[a.pk])
+    rows = []
+    for name, items in sorted(groups.items()):
+        costs = sum_present(e.costs for e in items) or Decimal(0)
+        gained = sum_present(e.kg_gained for e in items if e.kg_gained and e.kg_gained > 0)
+        value = sum_present(e.value for e in items)
+        purchase = sum_present(e.purchase for e in items) or Decimal(0)
+        rows.append({
+            "lot": name, "heads": len(items), "costs": costs, "kg_gained": gained,
+            "cost_per_kg": costs / gained if gained and costs else None,
+            "value": value, "purchase": purchase,
+            "margin": value - purchase - costs if value is not None and all(e.value for e in items) else None,
+        })
+    return rows, econ
+
+
+def sold_economics(organization, since):
+    sales = (
+        Movement.objects.for_org(organization).filter(kind=Movement.Kind.SALE, date__gte=since)
+        .select_related("animal__lot").order_by("-date")
+    )
+    animals = [m.animal for m in sales]
+    econ = herd_economics(organization, animals)
+    return [{"movement": m, "animal": m.animal, "econ": econ[m.animal_id],
+             "days": (m.date - m.animal.entry_date).days} for m in sales]

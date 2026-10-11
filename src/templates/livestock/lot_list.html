@@ -16,7 +16,7 @@
       <td>{{ lot.get_purpose_display }}</td>
       <td class="num"><a href="{% url 'livestock:animal_list' %}?lote={{ lot.pk }}">{{ lot.heads }}</a></td>
       <td>{% if lot.is_active %}<span class="badge badge-active">Activo</span>{% else %}<span class="badge badge-disabled">Cerrado</span>{% endif %}</td>
-      <td>{% if current_membership.can_write and lot.heads %}<a href="{% url 'livestock:transfer' %}?lote={{ lot.pk }}">Trasladar</a> · <a href="{% url 'livestock:treatment_add' %}?lote={{ lot.pk }}">Tratar</a>{% endif %}</td>
+      <td>{% if current_membership.can_write and lot.heads %}<a href="{% url 'livestock:transfer' %}?lote={{ lot.pk }}">Trasladar</a> · <a href="{% url 'livestock:treatment_add' %}?lote={{ lot.pk }}">Tratar</a> · <a href="{% url 'livestock:cost_add' %}?categoria=feed&amp;lote={{ lot.pk }}">Registrar alimento</a>{% endif %}</td>
     </tr>
   {% empty %}
     <tr><td colspan="5" class="muted">Aún no hay lotes. Úsalos para agrupar animales por manejo (ej.: «Engorda invierno 2026»).</td></tr>

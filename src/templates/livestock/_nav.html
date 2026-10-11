@@ -6,6 +6,7 @@
   <a href="{% url 'livestock:lot_list' %}"{% if "lot" in name %} aria-current="page"{% endif %}>Lotes</a>
   <a href="{% url 'livestock:reproduction' %}"{% if name == "reproduction" %} aria-current="page"{% endif %}>Reproducción</a>
   <a href="{% url 'livestock:health' %}"{% if name == "health" %} aria-current="page"{% endif %}>Sanidad</a>
+  <a href="{% url 'livestock:economics' %}"{% if name == "economics" %} aria-current="page"{% endif %}>Costos</a>
   {% if current_membership.can_write %}
   <a href="{% url 'livestock:weighing_import' %}"{% if name == "weighing_import" %} aria-current="page"{% endif %}>Importar pesajes</a>
   {% endif %}

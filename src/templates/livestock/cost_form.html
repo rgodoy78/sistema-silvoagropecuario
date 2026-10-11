@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Registrar costo{% endblock %}
+{% block content %}
+<p><a href="{% url 'livestock:economics' %}">« Costos</a></p>
+<h1>Registrar costo{% if animals %} · {{ animals|length }} animal{{ animals|length|pluralize:"es" }}{% endif %}</h1>
+<div class="card">
+  {% if animals %}<p class="muted">{% for a in animals|slice:":30" %}{{ a }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if animals|length > 30 %} y {{ animals|length|add:"-30" }} más{% endif %}.</p>{% endif %}
+  <p class="muted small">El monto se reparte en partes iguales entre los animales en existencia del destino elegido, y queda en el costo de cada uno.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for a in animals %}<input type="hidden" name="animal" value="{{ a.pk }}">{% endfor %}
+    {{ form }}
+    <div class="actions"><button type="submit">Registrar costo</button></div>
+  </form>
+</div>
+{% endblock %}

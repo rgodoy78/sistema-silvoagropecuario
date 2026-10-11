@@ -9,12 +9,15 @@ from livestock import services
 from livestock.models import (
     Animal,
     Breed,
+    Cost,
     Farm,
+    FeedItem,
     HealthProduct,
     Lot,
     Movement,
     Paddock,
     PregnancyCheck,
+    PriceReference,
     Treatment,
     Weighing,
 )
@@ -407,3 +410,86 @@ class HealthTests(LivestockTestCase):
         self.client.post(reverse("livestock:product_add"), {"name": "Ivermectina 1%", "kind": "other",
                                                             "withdrawal_days": 0})
         self.assertEqual(HealthProduct.objects.filter(organization=self.org).count(), 1)
+
+
+class CostTests(LivestockTestCase):
+    def setUp(self):
+        super().setUp()
+        self.lot = Lot.objects.create(organization=self.org, name="Engorda")
+        self.a1 = make_animal(self.org, self.farm, diio="70000001", sex="M", category="novillo", lot=self.lot)
+        self.a2 = make_animal(self.org, self.farm, diio="70000002", sex="M", category="novillo", lot=self.lot)
+        self.a3 = make_animal(self.org, self.farm, diio="70000003", sex="M", category="novillo", lot=self.lot)
+        self.feed = FeedItem.objects.create(organization=self.org, name="Concentrado engorda", kind="concentrate",
+                                            unit="kg", unit_cost=Decimal("310"))
+
+    def test_feed_cost_computed_and_split_by_lot(self):
+        response = self.client.post(reverse("livestock:cost_add"), {
+            "date": TODAY, "category": "feed", "feed_item": self.feed.pk, "quantity": "1000", "target": "lot",
+            "lot": self.lot.pk,
+        })
+        self.assertRedirects(response, reverse("livestock:economics"))
+        cost = Cost.objects.get(organization=self.org)
+        self.assertEqual((cost.amount, cost.heads), (Decimal("310000"), 3))
+        shares = sorted(a.amount for a in cost.allocations.all())
+        self.assertEqual(sum(shares), Decimal("310000"))
+        self.assertEqual(shares[0], Decimal("103333.33"))
+
+    def test_lot_cost_excludes_sold_animals(self):
+        services.register_exit(self.a3, Movement(kind="sale", date=TODAY), self.user)
+        self.client.post(reverse("livestock:cost_add"), {"date": TODAY, "category": "labor", "amount": "100000",
+                                                         "target": "lot", "lot": self.lot.pk})
+        self.assertEqual(Cost.objects.get(organization=self.org).heads, 2)
+        self.assertFalse(self.a3.cost_allocations.exists())
+
+    def test_selected_animals_and_general_cost(self):
+        self.client.post(reverse("livestock:cost_add"), {"animal": [self.a1.pk], "date": TODAY, "category": "vet",
+                                                         "amount": "45000", "target": "selected"})
+        self.assertEqual(self.a1.cost_allocations.get().amount, Decimal("45000"))
+        self.client.post(reverse("livestock:cost_add"), {"date": TODAY, "category": "other", "amount": "80000",
+                                                         "target": "general"})
+        self.assertEqual(Cost.objects.get(target="general").allocations.count(), 0)
+
+    def test_amount_required_without_feed(self):
+        response = self.client.post(reverse("livestock:cost_add"), {"date": TODAY, "category": "labor",
+                                                                    "target": "herd"})
+        self.assertContains(response, "Indica el monto")
+
+    def test_foreign_lot_and_feed_rejected(self):
+        foreign_lot = Lot.objects.create(organization=self.other_org, name="Ajeno")
+        self.client.post(reverse("livestock:cost_add"), {"date": TODAY, "category": "labor", "amount": "1000",
+                                                         "target": "lot", "lot": foreign_lot.pk})
+        self.assertFalse(Cost.objects.exists())
+
+    def test_economics_margin_and_cost_per_kg(self):
+        Movement.objects.create(organization=self.org, animal=self.a1, kind="purchase", date=TODAY - timedelta(100),
+                                price_clp=500000)
+        Weighing.objects.create(organization=self.org, animal=self.a1, date=TODAY - timedelta(100), weight_kg=300)
+        Weighing.objects.create(organization=self.org, animal=self.a1, date=TODAY, weight_kg=400)
+        services.register_cost(Cost(organization=self.org, date=TODAY, category="feed", amount=100000,
+                                    target="selected"), [self.a1], self.user)
+        PriceReference.objects.create(organization=self.org, category="novillo", price_per_kg=1900)
+        econ = services.herd_economics(self.org, [self.a1])[self.a1.pk]
+        self.assertEqual(econ.kg_gained, 100)
+        self.assertEqual(econ.cost_per_kg, 1000)
+        self.assertEqual(econ.value, 760000)
+        self.assertEqual(econ.margin, 760000 - 500000 - 100000)
+        response = self.client.get(reverse("livestock:animal_detail", args=[self.a1.pk]))
+        self.assertContains(response, "160.000")
+
+    def test_sold_margin_listed(self):
+        Weighing.objects.create(organization=self.org, animal=self.a2, date=TODAY - timedelta(200), weight_kg=250)
+        services.register_exit(self.a2, Movement(kind="sale", date=TODAY, weight_kg=480, price_clp=950000), self.user)
+        response = self.client.get(reverse("livestock:economics"))
+        self.assertContains(response, "950.000")
+        self.assertContains(response, "70000002")
+
+    def test_economics_page_isolated(self):
+        services.register_cost(Cost(organization=self.other_org, date=TODAY, category="feed", amount=999999,
+                                    target="general"), [], self.user)
+        self.assertNotContains(self.client.get(reverse("livestock:economics")), "999.999")
+
+    def test_delete_cost_removes_allocations(self):
+        cost = services.register_cost(Cost(organization=self.org, date=TODAY, category="feed", amount=3000,
+                                           target="lot", lot=self.lot), [self.a1, self.a2, self.a3], self.user)
+        self.client.post(reverse("livestock:cost_delete", args=[cost.pk]))
+        self.assertFalse(self.a1.cost_allocations.exists())

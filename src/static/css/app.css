@@ -333,6 +333,10 @@ code.secret { word-break: break-all; font-size: .95rem; }
 .quick-actions { display: flex; flex-wrap: wrap; gap: .35rem 1rem; align-items: center; margin: -.5rem 0 1.25rem; font-weight: 600; font-size: .9rem; }
 table.compact { font-size: .88rem; }
 table.compact th, table.compact td { padding: .45rem .5rem; }
+.facts-title { margin: 1.25rem 0 .6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.positive { color: var(--ok); font-weight: 600; }
+.negative { color: var(--danger); font-weight: 600; }
+.table-wrap td:first-child { white-space: nowrap; }
 .badge-move-sale { background: #fbecc7; color: #7a5300; }
 
 @media (max-width: 900px) {
