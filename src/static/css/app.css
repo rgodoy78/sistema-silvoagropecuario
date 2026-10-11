@@ -39,14 +39,12 @@ h3 { font-size: 1rem; font-weight: 700; margin: 0 0 .5rem; }
 /* ---------- Encabezado ---------- */
 .topbar { position: sticky; top: 0; z-index: 10; background: rgba(255, 255, 255, .92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .topbar-inner { max-width: 1200px; margin: 0 auto; padding: .6rem 1rem; display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center; justify-content: space-between; }
-.brand { display: flex; align-items: center; gap: .6rem; color: var(--forest-800); text-decoration: none; font-size: 1.05rem; }
-.brand strong { font-weight: 800; }
+.brand { display: flex; align-items: center; gap: .75rem; color: var(--forest-800); text-decoration: none; }
+.brand:hover { color: var(--forest-800); }
+.brand-text { display: flex; flex-direction: column; justify-content: center; gap: .2rem; padding-left: .75rem; border-left: 1px solid var(--line); line-height: 1; }
+.brand-name { font-size: .95rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.brand-tag { font-size: .62rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 .logo-mark { width: 36px; height: 36px; flex: none; }
-.logo-bg { fill: var(--forest-700); }
-.logo-andes { fill: #8fb3b0; }
-.logo-snow { fill: #fff; }
-.logo-leaf { fill: var(--wheat); }
-.logo-vein { fill: none; stroke: var(--forest-700); stroke-width: 1.2; stroke-linecap: round; }
 .topbar nav { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; align-items: center; }
 .topbar nav a:not(.button), .topbar nav .link { color: var(--text); text-decoration: none; font-weight: 600; font-size: .9rem; }
 .topbar nav a:not(.button):hover, .topbar nav .link:hover { color: var(--forest-600); }

@@ -1,7 +1,22 @@
-<svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
-  <circle cx="20" cy="20" r="20" class="logo-bg"/>
-  <path d="M5 28 L14 16 L19 22 L25 12 L35 28 Z" class="logo-andes"/>
-  <path d="M25 12 L22 17 L25 15.5 L27.5 18 Z" class="logo-snow"/>
-  <path d="M12 33 C12 26 17 22 25 21 C24 28 20 32 12 33 Z" class="logo-leaf"/>
-  <path d="M12 33 C15 29 18 26 22 24" class="logo-vein"/>
-</svg>
+{% comment %}Brote que nace de un microchip: agro + tecnología (IoT / IA).
+Se incluye varias veces por página: pasar uid distinto para no repetir los id de los degradados.{% endcomment %}{% with u=uid|default:"logo" %}<svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
+  <defs>
+    <linearGradient id="{{ u }}-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f4d2b"/><stop offset="1" stop-color="#0c2f36"/>
+    </linearGradient>
+    <linearGradient id="{{ u }}-fx" x1="10" y1="20" x2="31" y2="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a6e35a"/><stop offset="1" stop-color="#2fd0d8"/>
+    </linearGradient>
+  </defs>
+  <rect width="40" height="40" rx="10" fill="url(#{{ u }}-bg)"/>
+  <g transform="translate(0 -1)">
+    <path d="M20 24 V14" fill="none" stroke="#a6e35a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M20 19.5 C15.5 20 10.5 17.5 9.5 12 C15 11 19.5 14 20 19.5 Z" fill="url(#{{ u }}-fx)"/>
+    <path d="M20 15.5 C20.5 9.5 25.5 6 31 6 C31 11.5 26.5 16 20 15.5 Z" fill="url(#{{ u }}-fx)"/>
+    <g fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+      <rect x="13" y="24" width="14" height="10" rx="2.5"/>
+      <path d="M13 27 H10 M13 31 H10 M27 27 H30 M27 31 H30 M16.5 34 V36 M20 34 V36 M23.5 34 V36"/>
+    </g>
+    <circle cx="20" cy="29" r="1.8" fill="#2fd0d8"/>
+  </g>
+</svg>{% endwith %}

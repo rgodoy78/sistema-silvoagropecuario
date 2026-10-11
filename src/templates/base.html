@@ -8,14 +8,18 @@
   <title>{% block title %}ERP Silvoagropecuario{% endblock %} · ERP Silvoagropecuario</title>
   <link rel="preload" href="{% static 'fonts/montserrat-latin-400.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{% static 'fonts/montserrat-latin-700.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body class="{% block body_class %}app{% endblock %}">
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="{% if user.is_authenticated %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}">
-        {% include "partials/logo.html" %}
-        <span>ERP <strong>Silvoagropecuario</strong></span>
+        {% include "partials/logo.html" with uid="logo-top" %}
+        <span class="brand-text">
+          <strong class="brand-name">Silvoagropecuario</strong>
+          <span class="brand-tag">ERP · IoT · IA para el agro</span>
+        </span>
       </a>
       <nav aria-label="Principal">
         {% if user.is_authenticated %}
@@ -56,7 +60,7 @@
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        {% include "partials/logo.html" %}
+        {% include "partials/logo.html" with uid="logo-foot" %}
         <div>
           <strong>ERP Silvoagropecuario</strong>
           <p>Gestión forestal, frutícola, vitivinícola y ganadera. Hecho en Chile.</p>
