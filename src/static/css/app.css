@@ -337,6 +337,9 @@ table.compact th, table.compact td { padding: .45rem .5rem; }
 .positive { color: var(--ok); font-weight: 600; }
 .negative { color: var(--danger); font-weight: 600; }
 .table-wrap td:first-child { white-space: nowrap; }
+.fma-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.fma h3 { margin: 1rem 0 .4rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--forest-700); }
+.diio-list { columns: 4 140px; font-variant-numeric: tabular-nums; padding-left: 1.5rem; font-size: .9rem; }
 .badge-move-sale { background: #fbecc7; color: #7a5300; }
 
 @media (max-width: 900px) {
@@ -371,4 +374,12 @@ table.compact th, table.compact td { padding: .45rem .5rem; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .sector-img img, .sector:hover .sector-img img { transition: none; transform: none; }
+}
+
+/* ---------- Impresión (planillas SAG) ---------- */
+@media print {
+  .topbar, .footer, .no-print, .subnav, .alert-info { display: none !important; }
+  body { background: #fff; font-size: 12px; }
+  .card, .table-wrap, .panel { box-shadow: none; border-color: #bbb; }
+  a { color: inherit; text-decoration: none; }
 }

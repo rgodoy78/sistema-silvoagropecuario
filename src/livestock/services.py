@@ -163,14 +163,14 @@ DATE_COLUMNS = {"fecha", "date", "dia"}
 DATE_FORMATS = ["%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d", "%d-%m-%y", "%d/%m/%y", "%Y/%m/%d"]
 
 
-def _norm(header):
+def norm_header(header):
     header = header.strip().lower()
     for a, b in zip("áéíóú", "aeiou", strict=True):
         header = header.replace(a, b)
     return re.sub(r"[^a-z]", "", header)
 
 
-def _parse_date(text):
+def parse_date(text):
     text = text.strip().split(" ")[0]
     for fmt in DATE_FORMATS:
         try:
@@ -180,7 +180,7 @@ def _parse_date(text):
     return None
 
 
-def _parse_weight(text):
+def parse_weight(text):
     text = text.strip().replace(" ", "")
     if "," in text and "." in text:
         text = text.replace(".", "").replace(",", ".")
@@ -200,12 +200,8 @@ class ImportResult:
     errors: list = field(default_factory=list)
 
 
-def read_scale_file(data):
-    """Lee el CSV exportado por la balanza: columnas de identificación, peso y (opcional) fecha.
-
-    Acepta separador coma, punto y coma o tabulación; decimales con coma o punto.
-    Devuelve (filas, error) con filas = [(nro_linea, identificacion, peso_texto, fecha_texto)].
-    """
+def csv_rows(data):
+    """Filas de un CSV en UTF-8 o Latin-1, con separador coma, punto y coma o tabulación."""
     for encoding in ("utf-8-sig", "latin-1"):
         try:
             text = data.decode(encoding)
@@ -216,11 +212,20 @@ def read_scale_file(data):
         dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t")
     except csv.Error:
         dialect = csv.excel
-    reader = csv.reader(io.StringIO(text), dialect)
+    return list(csv.reader(io.StringIO(text), dialect))
+
+
+def read_scale_file(data):
+    """Lee el CSV exportado por la balanza: columnas de identificación, peso y (opcional) fecha.
+
+    Acepta separador coma, punto y coma o tabulación; decimales con coma o punto.
+    Devuelve (filas, error) con filas = [(nro_linea, identificacion, peso_texto, fecha_texto)].
+    """
+    reader = iter(csv_rows(data))
     header = next(reader, None)
     if not header:
         return [], "El archivo está vacío."
-    names = [_norm(h) for h in header]
+    names = [norm_header(h) for h in header]
     id_col, weight_col, date_col = (
         next((i for i, n in enumerate(names) if n in options), None)
         for options in (ID_COLUMNS, WEIGHT_COLUMNS, DATE_COLUMNS)
@@ -253,8 +258,8 @@ def import_weighings(organization, user, rows, *, default_date, method=Weighing.
         if animal is None:
             result.unknown.append(ident or f"línea {number}")
             continue
-        weight = _parse_weight(weight_text)
-        on = _parse_date(date_text) if date_text else default_date
+        weight = parse_weight(weight_text)
+        on = parse_date(date_text) if date_text else default_date
         if weight is None or on is None:
             result.errors.append(f"Línea {number}: peso o fecha no válidos ({weight_text!r}, {date_text!r}).")
             continue

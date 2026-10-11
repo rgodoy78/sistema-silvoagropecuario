@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Planilla FMA{% endblock %}
+{% block content %}
+<p class="no-print"><a href="{% url 'livestock:animal_list' %}">« Animales</a></p>
+<h1>Planilla para FMA <span class="muted small">· {{ animals|length }} animal{{ animals|length|pluralize:"es" }}</span></h1>
+{% if not sheet %}
+<div class="card no-print">
+  <p class="muted">Completa el destino y los datos del transporte. La planilla resume lo que debes ingresar en SIPECweb para emitir el FMA.</p>
+  <form method="get" novalidate>
+    {% for a in animals %}<input type="hidden" name="animal" value="{{ a.pk }}">{% endfor %}
+    {{ form }}
+    <div class="actions"><button type="submit">Generar planilla</button></div>
+  </form>
+</div>
+{% else %}
+<div class="actions no-print"><button type="button" class="secondary" data-print>Imprimir (2 copias)</button>
+  <a href="{% url 'livestock:transfer' %}?{% for a in animals %}animal={{ a.pk }}&amp;{% endfor %}">Registrar el traslado en el sistema</a></div>
+<div class="card fma">
+  <div class="fma-grid">
+    <div><h3>Origen</h3><p><strong>{{ sheet.origin }}</strong><br>RUP {{ sheet.origin.rup|default:"(sin RUP)" }}{% if sheet.origin.commune %}<br>{{ sheet.origin.commune }}{% endif %}</p></div>
+    <div><h3>Destino</h3><p><strong>{{ sheet.to_name|default:"—" }}</strong><br>RUP {{ sheet.to_rup }}</p></div>
+    <div><h3>Transporte</h3><p>Fecha de salida: {{ sheet.date|date:"d-m-Y" }}<br>Transportista: {{ sheet.carrier|default:"________________" }}<br>RUT: {{ sheet.carrier_rut|default:"__________" }} · Patente: {{ sheet.plate|default:"________" }}</p></div>
+  </div>
+  <h3>Especie: bovinos · cantidad por categoría</h3>
+  <table class="compact">
+    <thead><tr>{% for name, n in sheet.counts %}<th class="num">{{ name }}</th>{% endfor %}<th class="num">Total</th></tr></thead>
+    <tbody><tr>{% for name, n in sheet.counts %}<td class="num">{{ n }}</td>{% endfor %}<td class="num"><strong>{{ animals|length }}</strong></td></tr></tbody>
+  </table>
+  {% if sheet.without_diio %}<div class="alert alert-error">{{ sheet.without_diio|length }} animal{{ sheet.without_diio|length|pluralize:"es" }} sin DIIO: {% for a in sheet.without_diio %}{{ a }}{% if not forloop.last %}, {% endif %}{% endfor %}. Deben identificarse antes del traslado.</div>{% endif %}
+  <h3>DIIO</h3>
+  <ol class="diio-list">{% for a in animals %}{% if a.diio %}<li>{{ a.diio }} <span class="muted">{{ a.get_category_display }}</span></li>{% endif %}{% endfor %}</ol>
+  <p class="muted small">Copia 1: acompaña el transporte y queda en destino. Copia 2: queda en el establecimiento de origen.</p>
+</div>
+{% endif %}
+{% endblock %}

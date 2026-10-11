@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Importar animales{% endblock %}
+{% block content %}
+<p><a href="{% url 'livestock:animal_list' %}">« Animales</a></p>
+<h1>Importar animales desde Excel</h1>
+{% if not has_farms %}
+  <div class="alert alert-warning">Primero <a href="{% url 'livestock:farm_create' %}">registra tus predios</a>: la planilla indica en qué predio está cada animal.</div>
+{% endif %}
+<div class="dash-grid">
+  <div class="card span-2">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {{ form }}
+      <div class="actions"><button type="submit">Validar e importar</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Formato</h3>
+    <p class="small"><a href="?plantilla=1">Descarga la plantilla</a> y complétala en Excel. Columnas:</p>
+    <ul class="small plain-list">
+      <li><strong>Obligatorias:</strong> DIIO o Identificación, Sexo (Hembra/Macho), Categoría, Predio</li>
+      <li><strong>Opcionales:</strong> Raza, Fecha nacimiento, Potrero, Lote, Peso, Fecha peso, Madre (DIIO), Padre</li>
+    </ul>
+    <p class="small muted">Los potreros y lotes que no existan se crean. Si alguna fila tiene errores no se importa nada: corrige y vuelve a subir.</p>
+  </div>
+</div>
+{% if report %}
+<div class="card">
+  {% if report.errors %}
+    <h2>No se importó ningún animal</h2>
+    <p>Se revisaron {{ report.rows }} fila{{ report.rows|pluralize }} y se encontraron {{ report.errors|length }} problema{{ report.errors|length|pluralize }}:</p>
+    <div class="alert alert-error"><ul class="plain-list">{% for e in report.errors|slice:":100" %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% if report.errors|length > 100 %}<p>y {{ report.errors|length|add:"-100" }} más.</p>{% endif %}</div>
+  {% else %}
+    <h2>{{ report.created }} animales importados</h2>
+    {% if report.new_paddocks %}<p class="small">Potreros creados: {{ report.new_paddocks|join:", " }}.</p>{% endif %}
+    {% if report.new_lots %}<p class="small">Lotes creados: {{ report.new_lots|join:", " }}.</p>{% endif %}
+    <p><a class="button" href="{% url 'livestock:animal_list' %}">Ver animales</a></p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
