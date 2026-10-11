@@ -1,6 +1,6 @@
 from django.urls import path
 
-from livestock import views, views_costs, views_health, views_reproduction, views_sag
+from livestock import views, views_costs, views_health, views_maps, views_reproduction, views_sag
 
 app_name = "livestock"
 
@@ -44,4 +44,6 @@ urlpatterns = [
     path("sag/", views_sag.sag_overview, name="sag"),
     path("sag/fma/", views_sag.fma_sheet, name="fma_sheet"),
     path("animales/importar/", views_sag.animal_import, name="animal_import"),
+    path("mapa/<str:kind>/<int:pk>/", views_maps.boundary_edit, name="boundary_edit"),
+    path("predios/<int:pk>/potreros-kml/", views_maps.paddocks_from_kml, name="paddocks_from_kml"),
 ]

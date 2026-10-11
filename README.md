@@ -57,6 +57,20 @@ Mientras no esté configurado, los correos aparecen en `docker compose -f compos
 
 El código en `src/` se monta en el contenedor y gunicorn recarga solo al guardar.
 
+### Mapas satelitales (Esri ArcGIS)
+
+Los mapas de predios y potreros usan la imagen satelital *World Imagery* de Esri
+(plan gratuito de ArcGIS Location Platform: 2.000.000 de teselas al mes; uso
+comercial permitido). Sin API key los mapas funcionan sobre un fondo neutro.
+
+1. Crea una cuenta en [location.arcgis.com](https://location.arcgis.com) y una
+   **API key** con solo el privilegio de *basemaps*.
+2. En la configuración de la key, restringe los **referrers** a
+   `https://dev.nexsurcode.com` (y luego `https://nexsurcode.com`): la key viaja
+   al navegador en la URL de las teselas.
+3. Guárdala: `printf '%s' 'AAPK...' > secrets/esri_api_key`
+4. `docker compose -f compose.dev.yml up -d`
+
 ## Comandos útiles
 
 ```bash
