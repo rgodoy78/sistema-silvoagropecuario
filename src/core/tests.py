@@ -120,3 +120,16 @@ class ChartTests(SimpleTestCase):
         self.assertEqual(chart["total"], "4")
         x, y = chart["segments"]
         self.assertAlmostEqual(y["x"] - (x["x"] + x["w"]), 2, delta=0.1)
+
+
+class NiceRangeTests(SimpleTestCase):
+    def test_range_contains_data_with_nice_steps(self):
+        lo, hi = charts._nice_range(475, 486)
+        self.assertLessEqual(lo, 475)
+        self.assertGreaterEqual(hi, 486)
+        self.assertLess(hi - lo, 40)
+
+    def test_weight_line_not_zero_based(self):
+        chart = charts.line_chart(["a", "b"], [("Peso", [300.0, 380.0])], zero_based=False)
+        self.assertNotEqual(chart["grid"][0]["label"], "0")
+        self.assertEqual(charts.line_chart(["a", "b"], [("x", [1, 2])])["grid"][0]["label"], "0")

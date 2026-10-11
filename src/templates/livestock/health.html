@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Sanidad{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">Ganadería</p><h1>Sanidad</h1>
+    <p class="muted">Productos veterinarios, tratamientos y períodos de resguardo.</p></div>
+</div>
+{% include "livestock/_nav.html" %}
+
+<h2 class="section-label">Animales en resguardo <span class="badge badge-sample">{{ withdrawal|length }}</span></h2>
+<p class="muted small">No pueden venderse a faena hasta la fecha indicada. El sistema bloquea su venta.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Animal</th><th>Producto</th><th>Aplicado</th><th>Resguardo hasta</th><th class="num">Días restantes</th></tr></thead>
+  <tbody>
+  {% for t in withdrawal %}
+    <tr><td><a href="{% url 'livestock:animal_detail' t.animal_id %}">{{ t.animal }}</a></td><td>{{ t.product }}</td>
+      <td>{{ t.date|date:"d-m-Y" }}</td><td>{{ t.withdrawal_until|date:"d-m-Y" }}</td>
+      <td class="num">{{ t.days_left }}</td></tr>
+  {% empty %}<tr><td colspan="5" class="muted">Ningún animal en resguardo.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2 class="section-label">Últimos tratamientos</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th>Animal</th><th>Producto</th><th>Dosis</th><th>Motivo</th><th>Aplicado por</th></tr></thead>
+  <tbody>
+  {% for t in recent %}
+    <tr><td>{{ t.date|date:"d-m-Y" }}</td><td><a href="{% url 'livestock:animal_detail' t.animal_id %}">{{ t.animal }}</a></td>
+      <td>{{ t.product }}</td><td>{{ t.dose|default:"-" }}</td><td>{{ t.reason|default:"-" }}</td><td>{{ t.applied_by|default:"-" }}</td></tr>
+  {% empty %}<tr><td colspan="6" class="muted">Sin tratamientos. Para tratar un lote completo ve a <a href="{% url 'livestock:lot_list' %}">Lotes</a>; para animales puntuales, selecciónalos en <a href="{% url 'livestock:animal_list' %}">Animales</a>.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2 class="section-label">Productos veterinarios</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Producto</th><th>Tipo</th><th>Principio activo</th><th class="num">Resguardo (días)</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for p in products %}
+    <tr><td>{% if current_membership.can_write %}<a href="{% url 'livestock:product_edit' p.pk %}">{{ p.name }}</a>{% else %}{{ p.name }}{% endif %}</td>
+      <td>{{ p.get_kind_display }}</td><td>{{ p.active_ingredient|default:"-" }}</td><td class="num">{{ p.withdrawal_days }}</td>
+      <td>{% if p.is_active %}<span class="badge badge-active">En uso</span>{% else %}<span class="badge badge-disabled">Retirado</span>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="5" class="muted">Agrega los productos que usas, con sus días de resguardo según la etiqueta.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% if current_membership.can_write %}
+<form method="post" action="{% url 'livestock:product_add' %}" class="card inline-form" novalidate>
+  {% csrf_token %}
+  <div>{{ product_form.name.as_field_group }}</div><div>{{ product_form.kind.as_field_group }}</div>
+  <div>{{ product_form.active_ingredient.as_field_group }}</div><div>{{ product_form.withdrawal_days.as_field_group }}</div>
+  <div><button type="submit">Agregar producto</button></div>
+</form>
+{% endif %}
+{% endblock %}

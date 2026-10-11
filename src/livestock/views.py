@@ -19,13 +19,28 @@ from livestock.forms import (
     WeighingForm,
     WeighingImportForm,
 )
-from livestock.models import Animal, Farm, Lot, Movement, Paddock, Weighing
+from livestock.models import Animal, Farm, Lot, Movement, Paddock, Weaning, Weighing
 from organizations.decorators import organization_required, organization_write_required
 
 
 def _get(model, request, pk, **filters):
     """Objeto de la organización activa; un id de otra organización da 404."""
     return get_object_or_404(model.objects.for_org(request.organization), pk=pk, **filters)
+
+
+def selected_animals(request, **filters):
+    """Animales activos elegidos en el listado (?animal=1&animal=2) o un lote completo (?lote=3)."""
+    source = request.POST if request.method == "POST" else request.GET
+    animals = Animal.objects.for_org(request.organization).filter(status=Animal.Status.ACTIVE, **filters)
+    ids = [i for i in source.getlist("animal") if i.isdigit()]
+    lot_id = source.get("lote", "")
+    if ids:
+        animals = animals.filter(pk__in=ids)
+    elif lot_id.isdigit():
+        animals = animals.filter(lot_id=lot_id)
+    else:
+        return []
+    return list(animals.select_related("farm", "paddock"))
 
 
 # --- Panel ------------------------------------------------------------------
@@ -129,6 +144,7 @@ def animal_detail(request, pk):
         chart = charts.line_chart(
             [r["weighing"].date.strftime("%d-%m-%y") for r in points],
             [("Peso", [float(r["weighing"].weight_kg) for r in points])],
+            zero_based=False,
         )
     first_last = [(r["weighing"].date, r["weighing"].weight_kg) for r in (history[0], history[-1])] if history else None
     context = {
@@ -141,6 +157,14 @@ def animal_detail(request, pk):
         "offspring": animal.offspring.all(),
         "weighing_form": WeighingForm(organization=request.organization),
         "age": animal.age_months(),
+        "is_breeding": animal.category in services.BREEDING_CATEGORIES,
+        "is_calf": animal.category in (Animal.Category.CALF_F, Animal.Category.CALF_M),
+        "services": animal.services.select_related("bull"),
+        "checks": animal.pregnancy_checks.all(),
+        "calvings": animal.calvings.select_related("calf"),
+        "weaning": Weaning.objects.filter(calf=animal).first(),
+        "treatments": animal.treatments.select_related("product"),
+        "withdrawal": services.active_withdrawal(animal),
     }
     return render(request, "livestock/animal_detail.html", context)
 
@@ -222,17 +246,7 @@ def weighing_import(request):
 @require_http_methods(["GET", "POST"])
 def transfer(request):
     org = request.organization
-    source = request.POST if request.method == "POST" else request.GET
-    animals = Animal.objects.for_org(org).filter(status=Animal.Status.ACTIVE).select_related("farm", "paddock")
-    ids = [i for i in source.getlist("animal") if i.isdigit()]
-    lot_id = source.get("lote", "")
-    if ids:
-        animals = animals.filter(pk__in=ids)
-    elif lot_id.isdigit():
-        animals = animals.filter(lot_id=lot_id)
-    else:
-        animals = animals.none()
-    animals = list(animals)
+    animals = selected_animals(request)
     if not animals:
         messages.error(request, "Selecciona al menos un animal en existencia para trasladar.")
         return redirect("livestock:animal_list")

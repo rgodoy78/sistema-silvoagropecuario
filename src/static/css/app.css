@@ -326,6 +326,13 @@ code.secret { word-break: break-all; font-size: .95rem; }
 .badge-other_exit, .badge-move-other_exit { background: #ebeee6; }
 .badge-move-birth, .badge-move-purchase, .badge-move-initial { background: #d6ead8; color: var(--forest-700); }
 .badge-move-transfer { background: #e3eef0; color: #2f5a62; }
+.badge-check-pregnant { background: #d6ead8; color: var(--forest-700); }
+.badge-check-empty { background: #f3d5d2; color: #8a2722; }
+.badge-check-doubtful { background: #fbecc7; color: #7a5300; }
+.bulk-actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.quick-actions { display: flex; flex-wrap: wrap; gap: .35rem 1rem; align-items: center; margin: -.5rem 0 1.25rem; font-weight: 600; font-size: .9rem; }
+table.compact { font-size: .88rem; }
+table.compact th, table.compact td { padding: .45rem .5rem; }
 .badge-move-sale { background: #fbecc7; color: #7a5300; }
 
 @media (max-width: 900px) {

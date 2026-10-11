@@ -36,7 +36,14 @@
 <form method="get" action="{% url 'livestock:transfer' %}">
 <div class="table-head">
   <p class="muted">{{ page.paginator.count }} animal{{ page.paginator.count|pluralize:"es" }}</p>
-  {% if current_membership.can_write and f.estado == "active" %}<button type="submit" class="small secondary">Trasladar seleccionados</button>{% endif %}
+  {% if current_membership.can_write and f.estado == "active" %}
+  <div class="bulk-actions">
+    <span class="muted small">Con los seleccionados:</span>
+    <button type="submit" class="small secondary">Trasladar</button>
+    <button type="submit" formaction="{% url 'livestock:treatment_add' %}" class="small secondary">Aplicar tratamiento</button>
+    <button type="submit" formaction="{% url 'livestock:service_add' %}" class="small secondary">Registrar servicio</button>
+  </div>
+  {% endif %}
 </div>
 <div class="table-wrap">
 <table>
