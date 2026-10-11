@@ -1,0 +1,11 @@
+{% with name=request.resolver_match.url_name %}
+<nav class="subnav" aria-label="Ganadería">
+  <a href="{% url 'livestock:dashboard' %}"{% if name == "dashboard" %} aria-current="page"{% endif %}>Resumen</a>
+  <a href="{% url 'livestock:animal_list' %}"{% if "animal" in name or name == "transfer" %} aria-current="page"{% endif %}>Animales</a>
+  <a href="{% url 'livestock:farm_list' %}"{% if "farm" in name %} aria-current="page"{% endif %}>Predios</a>
+  <a href="{% url 'livestock:lot_list' %}"{% if "lot" in name %} aria-current="page"{% endif %}>Lotes</a>
+  {% if current_membership.can_write %}
+  <a href="{% url 'livestock:weighing_import' %}"{% if name == "weighing_import" %} aria-current="page"{% endif %}>Importar pesajes</a>
+  {% endif %}
+</nav>
+{% endwith %}

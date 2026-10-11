@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<p><a href="{% if back.1 %}{% url back.0 back.1 %}{% else %}{% url back.0 %}{% endif %}">« {{ back_label }}</a></p>
+<h1>{{ title }}</h1>
+<div class="card">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit">Guardar</button></div>
+  </form>
+</div>
+{% endblock %}

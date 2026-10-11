@@ -64,9 +64,16 @@ class Membership(models.Model):
     def __str__(self):
         return f"{self.user} · {self.organization} ({self.get_role_display()})"
 
+    # Roles que registran y modifican datos productivos; el resto solo consulta.
+    WRITE_ROLES = {Role.ADMIN, Role.MANAGER, Role.OFFICE, Role.FIELD_BOSS, Role.OPERATOR}
+
     @property
     def is_admin(self):
         return self.role == self.Role.ADMIN
+
+    @property
+    def can_write(self):
+        return self.role in self.WRITE_ROLES
 
 
 class OrganizationScopedQuerySet(models.QuerySet):

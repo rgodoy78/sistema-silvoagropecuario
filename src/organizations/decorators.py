@@ -27,3 +27,16 @@ def organization_admin_required(view):
         return view(request, *args, **kwargs)
 
     return wrapper
+
+
+def organization_write_required(view):
+    """Solo roles que registran datos (no Contador ni Externo)."""
+
+    @organization_required
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.membership.can_write:
+            raise PermissionDenied
+        return view(request, *args, **kwargs)
+
+    return wrapper

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Animales{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">Ganadería</p><h1>Animales</h1></div>
+  {% if current_membership.can_write %}<a class="button" href="{% url 'livestock:animal_create' %}">Registrar animal</a>{% endif %}
+</div>
+{% include "livestock/_nav.html" %}
+
+<form method="get" class="filters">
+  <div><label for="q">Buscar</label><input type="search" id="q" name="q" value="{{ f.q }}" placeholder="DIIO, identificación o padre"></div>
+  <div><label for="predio">Predio</label>
+    <select id="predio" name="predio"><option value="">Todos</option>
+      {% for x in farms %}<option value="{{ x.pk }}"{% if f.predio == x.pk|stringformat:"s" %} selected{% endif %}>{{ x }}</option>{% endfor %}
+    </select></div>
+  <div><label for="lote">Lote</label>
+    <select id="lote" name="lote"><option value="">Todos</option>
+      {% for x in lots %}<option value="{{ x.pk }}"{% if f.lote == x.pk|stringformat:"s" %} selected{% endif %}>{{ x }}</option>{% endfor %}
+    </select></div>
+  <div><label for="categoria">Categoría</label>
+    <select id="categoria" name="categoria"><option value="">Todas</option>
+      {% for v, l in categories %}<option value="{{ v }}"{% if f.categoria == v %} selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select></div>
+  <div><label for="sexo">Sexo</label>
+    <select id="sexo" name="sexo"><option value="">Ambos</option>
+      {% for v, l in sexes %}<option value="{{ v }}"{% if f.sexo == v %} selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select></div>
+  <div><label for="estado">Estado</label>
+    <select id="estado" name="estado">
+      {% for v, l in statuses %}<option value="{{ v }}"{% if f.estado == v %} selected{% endif %}>{{ l }}</option>{% endfor %}
+      <option value="todos"{% if f.estado == "todos" %} selected{% endif %}>Todos</option>
+    </select></div>
+  <button type="submit">Filtrar</button>
+</form>
+
+<form method="get" action="{% url 'livestock:transfer' %}">
+<div class="table-head">
+  <p class="muted">{{ page.paginator.count }} animal{{ page.paginator.count|pluralize:"es" }}</p>
+  {% if current_membership.can_write and f.estado == "active" %}<button type="submit" class="small secondary">Trasladar seleccionados</button>{% endif %}
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr>{% if current_membership.can_write %}<th><span class="visually-hidden">Seleccionar</span></th>{% endif %}<th>DIIO</th><th>Identificación</th><th>Categoría</th><th>Raza</th><th>Edad</th><th>Predio · potrero</th><th>Lote</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for a in page %}
+    <tr>
+      {% if current_membership.can_write %}<td>{% if a.is_active %}<input type="checkbox" name="animal" value="{{ a.pk }}" aria-label="Seleccionar {{ a }}">{% endif %}</td>{% endif %}
+      <td><a href="{% url 'livestock:animal_detail' a.pk %}">{{ a.diio|default:"(sin DIIO)" }}</a></td>
+      <td>{{ a.tag|default:"-" }}</td>
+      <td>{{ a.get_category_display }}</td>
+      <td>{{ a.breed|default:"-" }}</td>
+      <td>{% with m=a.age_months %}{% if m is not None %}{% if m < 24 %}{{ m }} m{% else %}{% widthratio m 12 1 %} a{% endif %}{% else %}-{% endif %}{% endwith %}</td>
+      <td>{{ a.farm }}{% if a.paddock %} · {{ a.paddock.name }}{% endif %}</td>
+      <td>{{ a.lot|default:"-" }}</td>
+      <td><span class="badge badge-{{ a.status }}">{{ a.get_status_display }}</span></td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="9" class="muted">Sin animales con estos filtros.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</form>
+{% if page.has_other_pages %}
+<div class="actions">
+  {% if page.has_previous %}<a href="?{{ querystring }}&pagina={{ page.previous_page_number }}">« Anterior</a>{% endif %}
+  <span class="muted">Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{{ querystring }}&pagina={{ page.next_page_number }}">Siguiente »</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

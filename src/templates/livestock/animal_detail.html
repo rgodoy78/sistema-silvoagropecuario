@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ animal }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'livestock:animal_list' %}">« Animales</a></p>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">{{ animal.get_category_display }} · {{ animal.breed|default:"raza sin indicar" }}</p>
+    <h1>{% if animal.diio %}DIIO {{ animal.diio }}{% else %}{{ animal.tag }}{% endif %}
+      <span class="badge badge-{{ animal.status }}">{{ animal.get_status_display }}</span></h1>
+    {% if animal.diio and animal.tag %}<p class="muted">{{ animal.tag }}</p>{% endif %}
+  </div>
+  {% if current_membership.can_write %}
+  <div class="actions">
+    <a class="button secondary" href="{% url 'livestock:animal_edit' animal.pk %}">Editar ficha</a>
+    {% if animal.is_active %}
+    <a class="button secondary" href="{% url 'livestock:transfer' %}?animal={{ animal.pk }}">Trasladar</a>
+    <a class="button secondary" href="{% url 'livestock:animal_exit' animal.pk %}">Registrar salida</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="kpi-grid kpi-grid-4">
+  <div class="kpi"><span class="kpi-label">Último peso</span>
+    <span class="kpi-value">{% if last_weight %}{{ last_weight.weight_kg|floatformat:"-1" }} <small>kg</small>{% else %}–{% endif %}</span>
+    {% if last_weight %}<span class="kpi-foot muted">{{ last_weight.date|date:"d-m-Y" }}</span>{% endif %}</div>
+  <div class="kpi"><span class="kpi-label">Ganancia diaria (total)</span>
+    <span class="kpi-value">{% if total_gain is not None %}{{ total_gain|floatformat:2 }} <small>kg/día</small>{% else %}–{% endif %}</span></div>
+  <div class="kpi"><span class="kpi-label">Edad</span>
+    <span class="kpi-value">{% if age is not None %}{{ age }} <small>meses{% if animal.birth_date_estimated %} (estimada){% endif %}</small>{% else %}–{% endif %}</span></div>
+  <div class="kpi"><span class="kpi-label">Ubicación</span>
+    <span class="kpi-value kpi-text">{{ animal.farm }}</span>
+    <span class="kpi-foot muted">{{ animal.paddock.name|default:"Sin potrero" }} · {{ animal.lot|default:"Sin lote" }}</span></div>
+</div>
+
+<div class="dash-grid">
+  <div class="panel span-2">
+    <div class="panel-head"><h3>Evolución de peso</h3><p>kg por pesaje</p></div>
+    {% if chart %}{% include "core/charts/line.html" with chart=chart title="Evolución de peso en kg" unit="kg" %}
+    {% else %}<p class="muted">Registra al menos dos pesajes para ver la curva.</p>{% endif %}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Ficha</h3></div>
+    <dl class="facts">
+      <dt>Sexo</dt><dd>{{ animal.get_sex_display }}</dd>
+      <dt>Nacimiento</dt><dd>{{ animal.birth_date|date:"d-m-Y"|default:"-" }}</dd>
+      <dt>Madre</dt><dd>{% if animal.mother %}<a href="{% url 'livestock:animal_detail' animal.mother_id %}">{{ animal.mother }}</a>{% else %}-{% endif %}</dd>
+      <dt>Padre</dt><dd>{{ animal.sire|default:"-" }}</dd>
+      <dt>Origen</dt><dd>{{ animal.get_origin_display }} · {{ animal.entry_date|date:"d-m-Y" }}</dd>
+      {% if animal.exit_date %}<dt>Salida</dt><dd>{{ animal.exit_date|date:"d-m-Y" }}</dd>{% endif %}
+      {% if offspring %}<dt>Crías</dt><dd>{% for c in offspring %}<a href="{% url 'livestock:animal_detail' c.pk %}">{{ c }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+      {% if animal.notes %}<dt>Notas</dt><dd>{{ animal.notes|linebreaksbr }}</dd>{% endif %}
+    </dl>
+  </div>
+</div>
+
+<h2 class="section-label">Pesajes</h2>
+{% if current_membership.can_write and animal.is_active %}
+<form method="post" action="{% url 'livestock:weighing_add' animal.pk %}" class="card inline-form" novalidate>
+  {% csrf_token %}
+  <div>{{ weighing_form.date.as_field_group }}</div><div>{{ weighing_form.weight_kg.as_field_group }}</div><div>{{ weighing_form.method.as_field_group }}</div><div>{{ weighing_form.notes.as_field_group }}</div>
+  <div><button type="submit">Registrar pesaje</button></div>
+</form>
+{% endif %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th class="num">Peso (kg)</th><th class="num">Ganancia (kg/día)</th><th>Método</th><th>Observación</th><th></th></tr></thead>
+  <tbody>
+  {% for row in history %}{% with w=row.weighing %}
+    <tr>
+      <td>{{ w.date|date:"d-m-Y" }}</td>
+      <td class="num">{{ w.weight_kg|floatformat:"-1" }}</td>
+      <td class="num">{% if row.gain is not None %}{{ row.gain|floatformat:2 }}{% else %}-{% endif %}</td>
+      <td>{{ w.get_method_display }}</td>
+      <td class="muted">{{ w.notes }}</td>
+      <td>{% if current_membership.can_write %}<form method="post" action="{% url 'livestock:weighing_delete' w.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}</td>
+    </tr>
+  {% endwith %}{% empty %}
+    <tr><td colspan="6" class="muted">Sin pesajes.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2 class="section-label">Historial de movimientos</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th>Tipo</th><th>Desde</th><th>Hacia</th><th>Contraparte</th><th>FMA</th><th class="num">Monto ($)</th><th>Detalle</th></tr></thead>
+  <tbody>
+  {% for m in movements %}
+    <tr>
+      <td>{{ m.date|date:"d-m-Y" }}</td>
+      <td><span class="badge badge-move-{{ m.kind }}">{{ m.get_kind_display }}</span></td>
+      <td>{{ m.from_farm|default:"-" }}{% if m.from_paddock %} · {{ m.from_paddock.name }}{% endif %}</td>
+      <td>{{ m.to_farm|default:"-" }}{% if m.to_paddock %} · {{ m.to_paddock.name }}{% endif %}</td>
+      <td>{{ m.counterparty|default:"-" }}{% if m.counterparty_rut %} ({{ m.counterparty_rut }}){% endif %}</td>
+      <td>{{ m.fma|default:"-" }}</td>
+      <td class="num">{% if m.price_clp is not None %}{{ m.price_clp|floatformat:"0g" }}{% else %}-{% endif %}</td>
+      <td class="muted">{{ m.cause|default:m.notes }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

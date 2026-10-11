@@ -11,4 +11,5 @@ urlpatterns = [
     path("gestion/organizaciones/", include("organizations.urls_management")),
     path("gestion/", include("accounts.urls_management")),
     path("organizacion/", include("organizations.urls")),
+    path("ganaderia/", include("livestock.urls")),
 ]

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{% if animal %}Editar {{ animal }}{% else %}Registrar animal{% endif %}{% endblock %}
+{% block content %}
+{% if animal %}<p><a href="{% url 'livestock:animal_detail' animal.pk %}">« {{ animal }}</a></p>{% else %}<p><a href="{% url 'livestock:animal_list' %}">« Animales</a></p>{% endif %}
+<h1>{% if animal %}Editar {{ animal }}{% else %}Registrar animal{% endif %}</h1>
+<form method="post" class="card form-grid" novalidate>
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <fieldset>
+    <legend>Identificación</legend>
+    <div>{{ form.diio.as_field_group }}</div><div>{{ form.tag.as_field_group }}</div>
+    <div>{{ form.sex.as_field_group }}</div><div>{{ form.category.as_field_group }}</div>
+    <div>{{ form.breed.as_field_group }}</div>
+  </fieldset>
+  <fieldset>
+    <legend>Nacimiento y genealogía</legend>
+    <div>{{ form.birth_date.as_field_group }}</div><div>{{ form.birth_date_estimated.as_field_group }}</div>
+    <div>{{ form.mother.as_field_group }}</div><div>{{ form.sire.as_field_group }}</div>
+  </fieldset>
+  <fieldset>
+    <legend>Ubicación y manejo</legend>
+    {% if form.farm %}<div>{{ form.origin.as_field_group }}</div><div>{{ form.entry_date.as_field_group }}</div><div>{{ form.farm.as_field_group }}</div><div>{{ form.paddock.as_field_group }}</div>{% endif %}
+    <div>{{ form.lot.as_field_group }}</div>
+    {% if animal %}<p class="muted small">El predio y el potrero se cambian con un <a href="{% url 'livestock:transfer' %}?animal={{ animal.pk }}">traslado</a>, para que quede en el historial.</p>{% endif %}
+  </fieldset>
+  {% if form.entry_weight %}
+  <fieldset>
+    <legend>Ingreso <span class="muted small">(opcional)</span></legend>
+    <div>{{ form.entry_weight.as_field_group }}</div>
+    <p class="muted small">Si el animal es comprado:</p>
+    <div>{{ form.counterparty.as_field_group }}</div><div>{{ form.counterparty_rut.as_field_group }}</div>
+    <div>{{ form.price.as_field_group }}</div><div>{{ form.fma.as_field_group }}</div>
+  </fieldset>
+  {% endif %}
+  <fieldset class="span-all"><div>{{ form.notes.as_field_group }}</div></fieldset>
+  <div class="actions span-all">
+    <button type="submit">Guardar</button>
+    {% if not animal %}<button type="submit" name="otro" value="1" class="secondary">Guardar y registrar otro</button>{% endif %}
+  </div>
+</form>
+{% endblock %}

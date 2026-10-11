@@ -183,7 +183,7 @@ table.breakdown tbody tr:hover { background: none; }
 /* ---------- Formularios ---------- */
 form div { margin-bottom: .9rem; }
 label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: .3rem; }
-input[type=text], input[type=email], input[type=password], input[type=tel], input[type=search], input[type=number], select, textarea {
+input[type=text], input[type=email], input[type=password], input[type=tel], input[type=search], input[type=number], input[type=date], input[type=file], select, textarea {
   width: 100%; padding: .6rem .75rem; border: 1px solid #cfd5ca; border-radius: 8px; font: inherit; background: #fff; transition: border-color .15s;
 }
 input:hover, select:hover, textarea:hover { border-color: #aeb8a8; }
@@ -209,7 +209,7 @@ th, td { text-align: left; padding: .7rem .85rem; border-bottom: 1px solid var(-
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: #fafbf8; }
 th { font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: #f8f9f5; }
-.badge { display: inline-block; padding: .15rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; background: #ebeee6; text-transform: none; letter-spacing: 0; }
+.badge { display: inline-block; white-space: nowrap; padding: .15rem .6rem; border-radius: 99px; font-size: .75rem; font-weight: 600; background: #ebeee6; text-transform: none; letter-spacing: 0; }
 .badge-approval_pending { background: #fbecc7; color: #7a5300; }
 .badge-active { background: #d6ead8; color: var(--forest-700); }
 .badge-rejected, .badge-disabled { background: #f3d5d2; color: #8a2722; }
@@ -299,7 +299,37 @@ code.secret { word-break: break-all; font-size: .95rem; }
 .auth .footer-inner { padding: 1rem; }
 
 /* ---------- Responsive ---------- */
+/* ---------- Módulos productivos (ganadería) ---------- */
+.subnav { display: flex; flex-wrap: wrap; gap: .25rem; margin: 0 0 1.25rem; border-bottom: 1px solid var(--line); }
+.subnav a { padding: .55rem .9rem; color: var(--muted); font-weight: 600; font-size: .9rem; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.subnav a:hover { color: var(--forest-700); }
+.subnav a[aria-current="page"] { color: var(--forest-800); border-bottom-color: var(--forest-600); }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2rem; }
+.form-grid fieldset { border: 0; margin: 0 0 .5rem; padding: 0; min-width: 0; }
+.form-grid legend { padding: 0; margin-bottom: .6rem; font-weight: 700; color: var(--forest-700); text-transform: uppercase; font-size: .78rem; letter-spacing: .08em; }
+.form-grid .span-all { grid-column: 1 / -1; }
+.inline-form { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: end; }
+.inline-form > div { flex: 1 1 160px; margin: 0; }
+.inline-form > div:last-child { flex: 0 0 auto; }
+.table-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
+.table-head p { margin: 0; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: .45rem 1rem; margin: 0; font-size: .9rem; }
+.facts dt { color: var(--muted); font-weight: 500; }
+.facts dd { margin: 0; }
+.kpi-text { font-size: 1.15rem; }
+.small-list { display: flex; flex-wrap: wrap; gap: .2rem .9rem; font-size: .85rem; font-weight: 500; color: var(--muted); }
+.small-list strong { color: var(--text); }
+.empty { text-align: center; padding: 2.5rem 1.5rem; }
+.empty p { max-width: 520px; margin: .5rem auto 1.25rem; color: var(--muted); }
+.badge-sold { background: #dfe8ef; color: #2d4f63; }
+.badge-dead, .badge-move-death { background: #f3d5d2; color: #8a2722; }
+.badge-other_exit, .badge-move-other_exit { background: #ebeee6; }
+.badge-move-birth, .badge-move-purchase, .badge-move-initial { background: #d6ead8; color: var(--forest-700); }
+.badge-move-transfer { background: #e3eef0; color: #2f5a62; }
+.badge-move-sale { background: #fbecc7; color: #7a5300; }
+
 @media (max-width: 900px) {
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
   .dash-grid { grid-template-columns: minmax(0, 1fr); }
   .span-2, .span-3 { grid-column: auto; }
   .auth-layout { grid-template-columns: minmax(0, 1fr); }

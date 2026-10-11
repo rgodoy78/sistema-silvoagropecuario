@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Salida de {{ animal }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'livestock:animal_detail' animal.pk %}">« {{ animal }}</a></p>
+<h1>Registrar salida de {{ animal }}</h1>
+<div class="card">
+  <p class="muted">Venta, muerte u otra salida. El animal dejará de figurar en existencia; su historial se conserva.
+    Para ventas, indica el N° de FMA emitido en SIPECweb.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit" class="danger">Registrar salida</button></div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ farm }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'livestock:farm_list' %}">« Predios</a></p>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Predio{% if farm.rup %} · RUP {{ farm.rup }}{% endif %}</p>
+    <h1>{{ farm }}</h1>
+    <p class="muted">{{ farm.commune|default:"Comuna sin indicar" }}{% if farm.area_ha %} · {{ farm.area_ha|floatformat:"-2" }} ha{% endif %} · <a href="{% url 'livestock:animal_list' %}?predio={{ farm.pk }}">{{ heads }} cabeza{{ heads|pluralize }}</a></p>
+  </div>
+  {% if current_membership.can_write %}<a class="button secondary" href="{% url 'livestock:farm_edit' farm.pk %}">Editar predio</a>{% endif %}
+</div>
+<h2 class="section-label">Potreros</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Potrero</th><th class="num">Superficie (ha)</th><th class="num">Cabezas</th><th></th></tr></thead>
+  <tbody>
+  {% for p in paddocks %}
+    <tr>
+      <td>{{ p.name }}</td>
+      <td class="num">{{ p.area_ha|floatformat:"-2"|default:"-" }}</td>
+      <td class="num">{{ p.heads }}</td>
+      <td>{% if current_membership.can_write and not p.heads %}<form method="post" action="{% url 'livestock:paddock_delete' p.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4" class="muted">Sin potreros.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if current_membership.can_write %}
+<form method="post" action="{% url 'livestock:paddock_add' farm.pk %}" class="card inline-form" novalidate>
+  {% csrf_token %}
+  <div>{{ paddock_form.name.as_field_group }}</div><div>{{ paddock_form.area_ha.as_field_group }}</div>
+  <div><button type="submit">Agregar potrero</button></div>
+</form>
+{% endif %}
+{% if farm.notes %}<div class="card"><h3>Notas</h3><p>{{ farm.notes|linebreaksbr }}</p></div>{% endif %}
+{% endblock %}
