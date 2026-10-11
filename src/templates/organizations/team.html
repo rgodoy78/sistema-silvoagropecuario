@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Equipo{% endblock %}
+{% block content %}
+<h1>Equipo de {{ current_organization }}</h1>
+<p class="muted">Define el rol de cada persona en tu organización. Para sumar a alguien nuevo, debe solicitar acceso
+  en el sitio y el administrador del sistema lo asignará a tu organización.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Cuenta</th><th></th></tr></thead>
+  <tbody>
+  {% for m in members %}
+    {% url 'organizations:team_member' m.pk as action_url %}
+    {% include "organizations/_member_row.html" %}
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

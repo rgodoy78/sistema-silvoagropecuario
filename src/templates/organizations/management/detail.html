@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ organization }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'org_management:list' %}">« Clientes</a></p>
+<h1>{{ organization }}</h1>
+
+<h2>Miembros</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Cuenta</th><th></th></tr></thead>
+  <tbody>
+  {% for m in members %}
+    {% url 'org_management:member_update' m.pk as action_url %}
+    {% include "organizations/_member_row.html" %}
+  {% empty %}
+    <tr><td colspan="5" class="muted">Sin miembros.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="card">
+  <h2>Agregar miembro</h2>
+  <form method="post" action="{% url 'org_management:member_add' organization.pk %}">
+    {% csrf_token %}
+    {{ add_form }}
+    <div class="actions"><button type="submit">Agregar</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Datos de la organización</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit">Guardar</button></div>
+  </form>
+</div>
+{% endblock %}

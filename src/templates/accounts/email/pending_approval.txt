@@ -4,6 +4,7 @@ Nombre: {{ user.get_full_name }}
 Correo: {{ user.email }}
 RUT:    {{ user.rut|default:"-" }}
 Cargo:  {{ user.position|default:"-" }}
+Empresa: {{ user.company|default:"-" }}
 
 Revisar: {{ url }}
 {% endautoescape %}

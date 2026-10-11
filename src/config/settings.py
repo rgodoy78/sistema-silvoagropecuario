@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "django_otp.plugins.otp_static",
     "accounts",
     "core",
+    "organizations",
 ]
 
 MIDDLEWARE = [
@@ -85,6 +86,7 @@ MIDDLEWARE = [
     "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "organizations.middleware.CurrentOrganizationMiddleware",
     "accounts.middleware.Require2FAForAdminsMiddleware",
     # Debe ir al final: bloquea tras intentos fallidos de login.
     "axes.middleware.AxesMiddleware",
@@ -104,6 +106,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "csp.context_processors.nonce",
+                "organizations.context_processors.organization",
             ],
         },
     },

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Nueva organización{% endblock %}
+{% block content %}
+<p><a href="{% url 'org_management:list' %}">« Clientes</a></p>
+<h1>Nueva organización</h1>
+<div class="card">
+  {% if owner %}
+    <p><strong>{{ owner.get_full_name|default:owner.email }}</strong> ({{ owner.email }}) quedará como administrador de esta organización.</p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <div class="actions"><button type="submit">Crear</button></div>
+  </form>
+</div>
+{% endblock %}

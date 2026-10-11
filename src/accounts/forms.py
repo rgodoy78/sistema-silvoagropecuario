@@ -35,12 +35,15 @@ class SignupForm(RutCleanMixin, forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["email", *PROFILE_FIELDS]
+        fields = ["email", *PROFILE_FIELDS, "company"]
+        labels = {"company": "Empresa u organización"}
+        help_texts = {"company": "Nombre de la empresa o predio para el que solicitas acceso."}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["first_name"].required = True
         self.fields["last_name"].required = True
+        self.fields["company"].required = True
         self.fields["password1"].help_text = password_validation.password_validators_help_text_html()
 
     def validate_unique(self):
@@ -115,12 +118,15 @@ class PasswordConfirmForm(forms.Form):
 
 class UserAdminForm(RutCleanMixin, forms.ModelForm):
     groups = forms.ModelMultipleChoiceField(
-        label="Roles", queryset=Group.objects.order_by("name"), required=False, widget=forms.CheckboxSelectMultiple
+        label="Roles del sistema",
+        queryset=Group.objects.order_by("name"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
     )
 
     class Meta:
         model = User
-        fields = [*PROFILE_FIELDS, "groups"]
+        fields = [*PROFILE_FIELDS, "company", "groups"]
 
 
 INTERNAL_APPS = ["admin", "auth", "contenttypes", "sessions", "axes", "otp_totp", "otp_static"]

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<h1>Clientes</h1>
+<p><a class="button" href="{% url 'org_management:create' %}">Nueva organización</a></p>
+<form method="get" class="filters">
+  <div><label for="q">Buscar</label><input type="search" id="q" name="q" value="{{ query }}" placeholder="Nombre o RUT"></div>
+  <button type="submit">Filtrar</button>
+</form>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Organización</th><th>RUT</th><th>Miembros</th><th>Estado</th><th>Creada</th></tr></thead>
+  <tbody>
+  {% for o in page %}
+    <tr>
+      <td><a href="{% url 'org_management:detail' o.pk %}">{{ o.name }}</a></td>
+      <td>{{ o.rut|default:"-" }}</td>
+      <td>{{ o.members }}</td>
+      <td>{% if o.is_active %}<span class="badge badge-active">Activa</span>{% else %}<span class="badge badge-disabled">Inactiva</span>{% endif %}</td>
+      <td>{{ o.created_at|date:"d-m-Y" }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="muted">Sin organizaciones.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if page.has_other_pages %}
+<div class="actions">
+  {% if page.has_previous %}<a href="?q={{ query|urlencode }}&pagina={{ page.previous_page_number }}">« Anterior</a>{% endif %}
+  <span class="muted">Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?q={{ query|urlencode }}&pagina={{ page.next_page_number }}">Siguiente »</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -73,7 +73,7 @@ class SignupFlowTests(BaseTestCase):
         return self.client.post(
             reverse("accounts:signup"),
             {"email": email, "first_name": "Nuevo", "last_name": "Usuario", "rut": "", "phone": "", "position": "",
-             "password1": PASSWORD, "password2": PASSWORD},
+             "company": "Agrícola Nueva", "password1": PASSWORD, "password2": PASSWORD},
         )
 
     def test_full_signup_confirm_and_approval(self):

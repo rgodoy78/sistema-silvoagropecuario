@@ -1,0 +1,25 @@
+{% comment %}Fila de un miembro con cambio de rol y botón quitar. Requiere: m (con m.editable), roles, action_url.{% endcomment %}
+<tr>
+  <td>{{ m.user.get_full_name|default:"(sin nombre)" }}</td>
+  <td>{{ m.user.email }}</td>
+  <td>
+    {% if m.editable %}
+    <form method="post" action="{{ action_url }}" class="inline role-form">
+      {% csrf_token %}<input type="hidden" name="accion" value="rol">
+      <label class="visually-hidden" for="rol-{{ m.pk }}">Rol de {{ m.user.email }}</label>
+      <select id="rol-{{ m.pk }}" name="role">
+        {% for value, label in roles %}<option value="{{ value }}"{% if value == m.role %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="small secondary">Cambiar</button>
+    </form>
+    {% else %}{{ m.get_role_display }}{% endif %}
+  </td>
+  <td><span class="badge badge-{{ m.user.status }}">{{ m.user.get_status_display }}</span></td>
+  <td>
+    {% if m.editable %}
+    <form method="post" action="{{ action_url }}" class="inline">
+      {% csrf_token %}<input type="hidden" name="accion" value="quitar"><button type="submit" class="link">Quitar</button>
+    </form>
+    {% endif %}
+  </td>
+</tr>

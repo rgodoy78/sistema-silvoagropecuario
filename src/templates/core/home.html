@@ -3,11 +3,15 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <p class="eyebrow">Panel</p>
+    <p class="eyebrow">{% if current_organization %}{{ current_organization }}{% else %}Panel{% endif %}</p>
     <h1>Hola, {{ user.get_short_name|default:user.email }}</h1>
     <p class="muted">Resumen de la temporada {{ season }}.</p>
   </div>
 </div>
+
+{% if not current_organization and not perms.accounts.manage_users %}
+  <div class="alert alert-warning">Aún no perteneces a ninguna organización. Un administrador del sistema debe asignarte a tu empresa para que puedas registrar datos.</div>
+{% endif %}
 
 {% if users %}
 <section aria-labelledby="cuentas">

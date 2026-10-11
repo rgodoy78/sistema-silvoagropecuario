@@ -49,6 +49,23 @@ h3 { font-size: 1rem; font-weight: 700; margin: 0 0 .5rem; }
 .topbar nav a:not(.button), .topbar nav .link { color: var(--text); text-decoration: none; font-weight: 600; font-size: .9rem; }
 .topbar nav a:not(.button):hover, .topbar nav .link:hover { color: var(--forest-600); }
 .nav-user { display: inline-flex; align-items: center; gap: .45rem; }
+/* Organización activa y selector (sin JS: <details>). */
+.org-name, .org-switch summary { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .7rem; border: 1px solid var(--line); border-radius: 99px; background: var(--tint); color: var(--forest-800); font-weight: 700; font-size: .82rem; }
+.org-switch { position: relative; }
+.org-switch summary { cursor: pointer; list-style: none; }
+.org-switch summary::-webkit-details-marker { display: none; }
+.org-switch summary::after { content: "▾"; font-size: .7rem; color: var(--muted); }
+.org-menu { position: absolute; right: 0; top: calc(100% + .4rem); z-index: 20; min-width: 220px; padding: .4rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.org-menu form { margin: 0; }
+.org-menu .link { display: block; width: 100%; padding: .45rem .6rem; text-align: left; border-radius: 6px; }
+.org-menu .link:hover { background: var(--tint); }
+.org-menu .link.current { font-weight: 800; color: var(--forest-700); }
+.role-form { display: inline-flex; gap: .4rem; align-items: center; }
+.role-form select { width: auto; padding-top: .35rem; padding-bottom: .35rem; }
+button.small { padding: .4rem .85rem; font-size: .85rem; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.plain-list { margin: 0; padding-left: 1.1rem; }
+.plain-list li { margin: .2rem 0; }
 .avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--wheat-100); color: var(--forest-800); font-weight: 800; font-size: .8rem; }
 
 /* ---------- Botones ---------- */
