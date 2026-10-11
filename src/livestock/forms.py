@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django import forms
 
@@ -8,12 +9,15 @@ from livestock.models import (
     Animal,
     Breed,
     Calving,
+    Cost,
     Farm,
+    FeedItem,
     HealthProduct,
     Lot,
     Movement,
     Paddock,
     PregnancyCheck,
+    PriceReference,
     Service,
     Weighing,
     diio_validator,
@@ -360,3 +364,64 @@ class TreatmentForm(forms.Form):
     def __init__(self, *args, organization, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["product"].queryset = HealthProduct.objects.for_org(organization).filter(is_active=True)
+
+
+# --- Alimentación y costos --------------------------------------------------
+
+
+class FeedItemForm(OrganizationScopedForm):
+    class Meta:
+        model = FeedItem
+        fields = ["name", "kind", "unit", "unit_cost", "is_active"]
+        help_texts = {"unit": ""}
+
+
+class PriceReferenceForm(OrganizationScopedForm):
+    class Meta:
+        model = PriceReference
+        fields = ["category", "price_per_kg", "date"]
+        widgets = {"date": DATE_INPUT}
+
+
+class CostForm(OrganizationScopedForm):
+    """Costo del rebaño. Con alimento y cantidad, el monto se calcula si se deja vacío."""
+
+    class Meta:
+        model = Cost
+        fields = ["date", "category", "feed_item", "quantity", "amount", "description", "target", "lot"]
+        widgets = {"date": DATE_INPUT}
+        help_texts = {"amount": "Si eliges un alimento e indicas la cantidad, puedes dejarlo vacío."}
+
+    def __init__(self, *args, preselected=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.preselected = preselected
+        self.fields["amount"].required = False
+        self.fields["feed_item"].queryset = self.fields["feed_item"].queryset.filter(is_active=True)
+        self.fields["lot"].queryset = self.fields["lot"].queryset.filter(is_active=True)
+        targets = Cost.Target.choices
+        if preselected:
+            self.fields["target"].initial = Cost.Target.SELECTED
+            self.fields["target"].widget = forms.HiddenInput()
+        else:
+            targets = [t for t in targets if t[0] != Cost.Target.SELECTED]
+        self.fields["target"].choices = targets
+
+    def clean_date(self):
+        return not_in_future(self.cleaned_data.get("date"))
+
+    def clean(self):
+        cleaned = super().clean()
+        item, qty, amount = cleaned.get("feed_item"), cleaned.get("quantity"), cleaned.get("amount")
+        if item and cleaned.get("category") != Cost.Category.FEED:
+            self.add_error("feed_item", "El alimento solo aplica a costos de alimentación.")
+        if amount is None:
+            if item and qty:
+                cleaned["amount"] = self.instance.amount = (item.unit_cost * qty).quantize(Decimal("1"))
+            else:
+                self.add_error("amount", "Indica el monto, o el alimento y la cantidad.")
+        target = cleaned.get("target")
+        if target == Cost.Target.LOT and not cleaned.get("lot"):
+            self.add_error("lot", "Elige el lote.")
+        if target == Cost.Target.SELECTED and not self.preselected:
+            self.add_error("target", "Selecciona los animales en el listado.")
+        return cleaned

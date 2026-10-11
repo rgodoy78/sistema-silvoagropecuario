@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load cl_format %}
 {% block title %}{{ animal }}{% endblock %}
 {% block content %}
 <p><a href="{% url 'livestock:animal_list' %}">« Animales</a></p>
@@ -29,6 +30,7 @@
   {% endif %}
   {% if is_calf and not weaning %}<a href="{% url 'livestock:weaning_add' animal.pk %}">Destete</a>{% endif %}
   <a href="{% url 'livestock:treatment_add' %}?animal={{ animal.pk }}">Tratamiento</a>
+  <a href="{% url 'livestock:cost_add' %}?animal={{ animal.pk }}">Costo</a>
 </p>
 {% endif %}
 
@@ -62,6 +64,14 @@
       {% if animal.exit_date %}<dt>Salida</dt><dd>{{ animal.exit_date|date:"d-m-Y" }}</dd>{% endif %}
       {% if offspring %}<dt>Crías</dt><dd>{% for c in offspring %}<a href="{% url 'livestock:animal_detail' c.pk %}">{{ c }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
       {% if animal.notes %}<dt>Notas</dt><dd>{{ animal.notes|linebreaksbr }}</dd>{% endif %}
+    </dl>
+    <h3 class="facts-title">Economía</h3>
+    <dl class="facts">
+      {% if econ.purchase %}<dt>Compra</dt><dd>$ {{ econ.purchase|miles }}</dd>{% endif %}
+      <dt>Costos asignados</dt><dd>$ {{ econ.costs|miles }}{% if econ.cost_per_kg %} <span class="muted small">· $ {{ econ.cost_per_kg|miles }}/kg ganado</span>{% endif %}</dd>
+      {% if econ.sale is not None %}<dt>Venta</dt><dd>$ {{ econ.sale|miles }}</dd>
+      {% elif econ.value is not None %}<dt>Valor estimado</dt><dd>$ {{ econ.value|miles }}</dd>{% endif %}
+      {% if econ.margin is not None %}<dt>Margen</dt><dd class="{% if econ.margin < 0 %}negative{% else %}positive{% endif %}">$ {{ econ.margin|miles }}</dd>{% endif %}
     </dl>
   </div>
 </div>
@@ -150,7 +160,7 @@
       <td>{{ m.to_farm|default:"-" }}{% if m.to_paddock %} · {{ m.to_paddock.name }}{% endif %}</td>
       <td>{{ m.counterparty|default:"-" }}{% if m.counterparty_rut %} ({{ m.counterparty_rut }}){% endif %}</td>
       <td>{{ m.fma|default:"-" }}</td>
-      <td class="num">{% if m.price_clp is not None %}{{ m.price_clp|floatformat:"0g" }}{% else %}-{% endif %}</td>
+      <td class="num">{% if m.price_clp is not None %}{{ m.price_clp|miles }}{% else %}-{% endif %}</td>
       <td class="muted">{{ m.cause|default:m.notes }}</td>
     </tr>
   {% endfor %}

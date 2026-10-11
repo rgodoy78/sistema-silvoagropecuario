@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load cl_format %}
+{% block title %}Costos y márgenes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">Ganadería</p><h1>Costos y márgenes</h1>
+    <p class="muted">Alimentación, gastos del rebaño y resultado por lote · últimos 12 meses.</p></div>
+  {% if current_membership.can_write %}
+  <div class="actions">
+    <a class="button secondary" href="{% url 'livestock:cost_add' %}?categoria=feed">Registrar alimento</a>
+    <a class="button" href="{% url 'livestock:cost_add' %}">Registrar costo</a>
+  </div>
+  {% endif %}
+</div>
+{% include "livestock/_nav.html" %}
+
+{% if missing_prices %}
+  <div class="alert alert-info">Agrega <a href="#precios">precios de referencia</a> por kg vivo para valorizar el rebaño y estimar márgenes.</div>
+{% endif %}
+
+<div class="kpi-grid kpi-grid-4">
+  <div class="kpi"><span class="kpi-label">Costos del período</span><span class="kpi-value">$ {{ total_costs|miles }}</span>
+    <span class="kpi-foot muted">$ {{ general_costs|miles }} en gastos generales</span></div>
+  <div class="kpi"><span class="kpi-label">Valor estimado del rebaño</span>
+    <span class="kpi-value">{% if herd_value is not None %}$ {{ herd_value|miles }}{% else %}–{% endif %}</span>
+    <span class="kpi-foot muted">Último peso × precio de referencia</span></div>
+  <div class="kpi"><span class="kpi-label">Margen de ventas</span>
+    <span class="kpi-value{% if sold_margin is not None and sold_margin < 0 %} negative{% endif %}">{% if sold_margin is not None %}$ {{ sold_margin|miles }}{% else %}–{% endif %}</span>
+    <span class="kpi-foot muted">{{ sold|length }} animal{{ sold|length|pluralize:"es" }} vendido{{ sold|length|pluralize }}</span></div>
+  <div class="panel">
+    <div class="panel-head"><h3>Costos por categoría</h3></div>
+    {% if by_category.bars %}{% include "core/charts/hbar.html" with chart=by_category title="Costos por categoría" %}{% else %}<p class="muted small">Sin costos.</p>{% endif %}
+  </div>
+</div>
+
+<h2 class="section-label">Resultado por lote · animales en existencia</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Lote</th><th class="num">Cabezas</th><th class="num">Costo acumulado</th><th class="num">kg ganados</th><th class="num">$ / kg ganado</th><th class="num">Compra</th><th class="num">Valor estimado</th><th class="num">Margen estimado</th></tr></thead>
+  <tbody>
+  {% for r in lots %}
+    <tr><td>{{ r.lot }}</td><td class="num">{{ r.heads }}</td><td class="num">$ {{ r.costs|miles }}</td>
+      <td class="num">{{ r.kg_gained|miles|default:"-" }}</td>
+      <td class="num">{% if r.cost_per_kg %}$ {{ r.cost_per_kg|miles }}{% else %}-{% endif %}</td>
+      <td class="num">$ {{ r.purchase|miles }}</td>
+      <td class="num">{% if r.value is not None %}$ {{ r.value|miles }}{% else %}-{% endif %}</td>
+      <td class="num {% if r.margin is not None %}{% if r.margin < 0 %}negative{% else %}positive{% endif %}{% endif %}">{% if r.margin is not None %}$ {{ r.margin|miles }}{% else %}-{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="8" class="muted">Sin animales en existencia.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="muted small">El margen estimado aparece cuando todos los animales del lote tienen peso y precio de referencia para su categoría.</p>
+
+<h2 class="section-label">Ventas · últimos 12 meses</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th>Animal</th><th>Lote</th><th class="num">Días</th><th class="num">kg ganados</th><th class="num">Compra</th><th class="num">Costos</th><th class="num">Venta</th><th class="num">Margen</th></tr></thead>
+  <tbody>
+  {% for r in sold %}{% with e=r.econ %}
+    <tr><td>{{ r.movement.date|date:"d-m-Y" }}</td><td><a href="{% url 'livestock:animal_detail' r.animal.pk %}">{{ r.animal }}</a></td>
+      <td>{{ r.animal.lot|default:"-" }}</td><td class="num">{{ r.days }}</td><td class="num">{{ e.kg_gained|miles|default:"-" }}</td>
+      <td class="num">$ {{ e.purchase|miles }}</td><td class="num">$ {{ e.costs|miles }}</td>
+      <td class="num">{% if e.sale is not None %}$ {{ e.sale|miles }}{% else %}<span class="muted">sin precio</span>{% endif %}</td>
+      <td class="num {% if e.margin is not None %}{% if e.margin < 0 %}negative{% else %}positive{% endif %}{% endif %}">{% if e.margin is not None %}$ {{ e.margin|miles }}{% else %}-{% endif %}</td></tr>
+  {% endwith %}{% empty %}<tr><td colspan="9" class="muted">Sin ventas en el período.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2 class="section-label">Últimos costos</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th>Categoría</th><th>Detalle</th><th>Asignado a</th><th class="num">Monto</th><th class="num">Por cabeza</th><th></th></tr></thead>
+  <tbody>
+  {% for c in recent %}
+    <tr><td>{{ c.date|date:"d-m-Y" }}</td><td>{{ c.get_category_display }}</td>
+      <td>{% if c.feed_item %}{{ c.quantity|floatformat:"-2" }} {{ c.feed_item.unit }} de {{ c.feed_item.name }}{% if c.description %} · {% endif %}{% endif %}{{ c.description }}</td>
+      <td>{% if c.target == "lot" %}{{ c.lot|default:"(lote eliminado)" }}{% else %}{{ c.get_target_display }}{% endif %}{% if c.heads %} <span class="muted small">({{ c.heads }} cab.)</span>{% endif %}</td>
+      <td class="num">$ {{ c.amount|miles }}</td>
+      <td class="num">{% if c.heads %}$ {{ c.per_head|miles }}{% else %}-{% endif %}</td>
+      <td>{% if current_membership.can_write %}<form method="post" action="{% url 'livestock:cost_delete' c.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="7" class="muted">Sin costos registrados.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="dash-grid">
+  <div class="panel span-2">
+    <div class="panel-head"><h3>Alimentos</h3><p>Catálogo con costo por unidad, para calcular entregas de alimento</p></div>
+    <table class="compact">
+      <thead><tr><th>Alimento</th><th>Tipo</th><th class="num">Costo por unidad</th></tr></thead>
+      <tbody>
+      {% for f in feed_items %}
+        <tr><td>{% if current_membership.can_write %}<a href="{% url 'livestock:feed_item_edit' f.pk %}">{{ f.name }}</a>{% else %}{{ f.name }}{% endif %}{% if not f.is_active %} <span class="badge badge-disabled">Retirado</span>{% endif %}</td>
+          <td>{{ f.get_kind_display }}</td><td class="num">$ {{ f.unit_cost|miles }} / {{ f.unit }}</td></tr>
+      {% empty %}<tr><td colspan="3" class="muted">Sin alimentos.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% if current_membership.can_write %}
+    <form method="post" action="{% url 'livestock:feed_item_add' %}" class="inline-form" novalidate>
+      {% csrf_token %}
+      <div>{{ feed_form.name.as_field_group }}</div><div>{{ feed_form.kind.as_field_group }}</div>
+      <div>{{ feed_form.unit.as_field_group }}</div><div>{{ feed_form.unit_cost.as_field_group }}</div>
+      <div><button type="submit">Agregar</button></div>
+    </form>
+    {% endif %}
+  </div>
+  <div class="panel" id="precios">
+    <div class="panel-head"><h3>Precios de referencia</h3><p>$ por kg vivo, para valorizar animales en existencia</p></div>
+    <table class="compact">
+      <thead><tr><th>Categoría</th><th class="num">$/kg</th><th>Desde</th></tr></thead>
+      <tbody>
+      {% for p in prices %}<tr><td>{{ p.get_category_display }}</td><td class="num">{{ p.price_per_kg|miles }}</td><td>{{ p.date|date:"d-m-Y" }}</td></tr>
+      {% empty %}<tr><td colspan="3" class="muted">Sin precios.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% if current_membership.can_write %}
+    <form method="post" action="{% url 'livestock:price_add' %}" novalidate>
+      {% csrf_token %}
+      {{ price_form }}
+      <button type="submit">Agregar precio</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

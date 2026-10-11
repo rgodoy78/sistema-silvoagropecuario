@@ -133,3 +133,13 @@ class NiceRangeTests(SimpleTestCase):
         chart = charts.line_chart(["a", "b"], [("Peso", [300.0, 380.0])], zero_based=False)
         self.assertNotEqual(chart["grid"][0]["label"], "0")
         self.assertEqual(charts.line_chart(["a", "b"], [("x", [1, 2])])["grid"][0]["label"], "0")
+
+
+class MilesFilterTests(SimpleTestCase):
+    def test_chilean_thousands(self):
+        from core.templatetags.cl_format import miles
+
+        self.assertEqual(miles(950000), "950.000")
+        self.assertEqual(miles("1234567.8"), "1.234.568")
+        self.assertEqual(miles(None), "")
+        self.assertEqual(miles("abc"), "")

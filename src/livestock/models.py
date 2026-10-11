@@ -491,3 +491,110 @@ class Treatment(OrganizationScopedModel):
         days = self.product.withdrawal_days
         self.withdrawal_until = self.date + timedelta(days=days) if days else None
         super().save(*args, **kwargs)
+
+
+# --- Alimentación y costos --------------------------------------------------
+
+
+class FeedItem(OrganizationScopedModel):
+    class Kind(models.TextChoices):
+        CONCENTRATE = "concentrate", "Concentrado"
+        FORAGE = "forage", "Forraje (heno, ensilaje)"
+        MINERAL = "mineral", "Sales minerales"
+        GRAZING = "grazing", "Pradera / talaje"
+        OTHER = "other", "Otro"
+
+    name = models.CharField("nombre", max_length=100)
+    kind = models.CharField("tipo", max_length=15, choices=Kind.choices)
+    unit = models.CharField("unidad", max_length=20, default="kg", help_text="kg, fardo, saco, tonelada, día...")
+    unit_cost = models.DecimalField("costo por unidad ($)", max_digits=12, decimal_places=2,
+                                    validators=[MinValueValidator(0)])
+    is_active = models.BooleanField("en uso", default=True)
+
+    class Meta:
+        verbose_name = "alimento"
+        verbose_name_plural = "alimentos"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["organization", "name"], name="livestock_feeditem_name_unique"),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.unit})"
+
+
+class Cost(OrganizationScopedModel):
+    """Costo del rebaño. Si se asigna a animales, se reparte en partes iguales (CostAllocation)."""
+
+    class Category(models.TextChoices):
+        FEED = "feed", "Alimentación"
+        HEALTH = "health", "Sanidad"
+        VET = "vet", "Servicios veterinarios"
+        LABOR = "labor", "Mano de obra"
+        FREIGHT = "freight", "Fletes"
+        COMMISSION = "commission", "Comisión de feria"
+        LEASE = "lease", "Arriendo / talaje"
+        OTHER = "other", "Otros"
+
+    class Target(models.TextChoices):
+        LOT = "lot", "Un lote"
+        SELECTED = "selected", "Animales seleccionados"
+        HERD = "herd", "Todo el rebaño en existencia"
+        GENERAL = "general", "Gasto general (no se asigna a animales)"
+
+    date = models.DateField("fecha", default=date.today)
+    category = models.CharField("categoría", max_length=12, choices=Category.choices)
+    description = models.CharField("descripción", max_length=150, blank=True)
+    feed_item = models.ForeignKey(
+        FeedItem, verbose_name="alimento", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    quantity = models.DecimalField("cantidad", max_digits=12, decimal_places=2, null=True, blank=True)
+    amount = models.DecimalField("monto total ($)", max_digits=14, decimal_places=0, validators=[MinValueValidator(0)])
+    target = models.CharField("asignado a", max_length=10, choices=Target.choices)
+    lot = models.ForeignKey(Lot, verbose_name="lote", on_delete=models.SET_NULL, null=True, blank=True,
+                            related_name="costs")
+    heads = models.PositiveIntegerField("cabezas", default=0, editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "costo"
+        verbose_name_plural = "costos"
+        ordering = ["-date", "-created_at"]
+        indexes = [models.Index(fields=["organization", "date"])]
+
+    def __str__(self):
+        return f"{self.get_category_display()} · ${self.amount:,.0f} ({self.date:%d-%m-%Y})".replace(",", ".")
+
+    @property
+    def per_head(self):
+        return self.amount / self.heads if self.heads else None
+
+
+class CostAllocation(OrganizationScopedModel):
+    cost = models.ForeignKey(Cost, on_delete=models.CASCADE, related_name="allocations")
+    animal = models.ForeignKey(Animal, on_delete=models.CASCADE, related_name="cost_allocations")
+    amount = models.DecimalField("monto ($)", max_digits=14, decimal_places=2)
+
+    class Meta:
+        verbose_name = "costo asignado"
+        verbose_name_plural = "costos asignados"
+
+
+class PriceReference(OrganizationScopedModel):
+    """Precio de referencia por kg vivo para valorizar animales en existencia."""
+
+    category = models.CharField("categoría", max_length=10, choices=Animal.Category.choices)
+    price_per_kg = models.DecimalField("precio por kg vivo ($)", max_digits=8, decimal_places=0,
+                                       validators=[MinValueValidator(1)])
+    date = models.DateField("vigente desde", default=date.today)
+
+    class Meta:
+        verbose_name = "precio de referencia"
+        verbose_name_plural = "precios de referencia"
+        ordering = ["category", "-date"]
+
+    def __str__(self):
+        return f"{self.get_category_display()}: ${self.price_per_kg}/kg"

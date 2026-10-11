@@ -165,6 +165,7 @@ def animal_detail(request, pk):
         "weaning": Weaning.objects.filter(calf=animal).first(),
         "treatments": animal.treatments.select_related("product"),
         "withdrawal": services.active_withdrawal(animal),
+        "econ": services.herd_economics(request.organization, [animal])[animal.pk],
     }
     return render(request, "livestock/animal_detail.html", context)
 
