@@ -26,12 +26,29 @@
       <form method="post" action="{% url 'management:user_action' target.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="accion" value="reiniciar_2fa"><button type="submit" class="secondary">Reiniciar 2FA</button></form>
     {% endif %}
   </div>
-  {% if target.status == "approval_pending" %}<p class="muted">Asigna los roles abajo y guarda antes de aprobar.</p>{% endif %}
+  {% if target.status == "approval_pending" %}<p class="muted">Antes de aprobar, asígnalo a una organización (abajo).</p>{% endif %}
   {% endif %}
 </div>
 
 <div class="card">
-  <h2>Datos y roles</h2>
+  <h2>Organizaciones</h2>
+  {% if memberships %}
+    <ul class="plain-list">
+    {% for m in memberships %}
+      <li><a href="{% url 'org_management:detail' m.organization.pk %}">{{ m.organization }}</a> · {{ m.get_role_display }}{% if not m.organization.is_active %} <span class="badge badge-disabled">Inactiva</span>{% endif %}</li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No pertenece a ninguna organización{% if target.company %}. Indicó la empresa «{{ target.company }}»{% endif %}.</p>
+  {% endif %}
+  <div class="actions">
+    <a class="button secondary" href="{% url 'org_management:create' %}?usuario={{ target.pk }}">Crear organización{% if target.company %} «{{ target.company }}»{% endif %} con este usuario como administrador</a>
+    <a href="{% url 'org_management:list' %}">Agregar a una organización existente</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Datos y roles del sistema</h2>
   <form method="post">
     {% csrf_token %}
     {{ form }}

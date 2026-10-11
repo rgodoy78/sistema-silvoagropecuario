@@ -23,8 +23,29 @@
       </a>
       <nav aria-label="Principal">
         {% if user.is_authenticated %}
+          {% if current_organization %}
+            {% if user_memberships|length > 1 %}
+            <details class="org-switch">
+              <summary>{{ current_organization }}</summary>
+              <div class="org-menu">
+                {% for m in user_memberships %}
+                <form method="post" action="{% url 'organizations:switch' %}">
+                  {% csrf_token %}<input type="hidden" name="organizacion" value="{{ m.organization_id }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="link{% if m.organization_id == current_organization.pk %} current{% endif %}">{{ m.organization }}</button>
+                </form>
+                {% endfor %}
+              </div>
+            </details>
+            {% else %}
+            <span class="org-name">{{ current_organization }}</span>
+            {% endif %}
+          {% endif %}
           <a href="{% url 'home' %}">Panel</a>
+          {% if current_membership.is_admin %}
+            <a href="{% url 'organizations:team' %}">Equipo</a>
+          {% endif %}
           {% if perms.accounts.manage_users %}
+            <a href="{% url 'org_management:list' %}">Clientes</a>
             <a href="{% url 'management:user_list' %}">Usuarios</a>
             <a href="{% url 'management:role_list' %}">Roles</a>
           {% endif %}

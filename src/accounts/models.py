@@ -55,6 +55,8 @@ class User(AbstractUser):
     rut = models.CharField("RUT", max_length=12, blank=True, validators=[validate_rut])
     phone = models.CharField("teléfono", max_length=20, blank=True)
     position = models.CharField("cargo", max_length=100, blank=True)
+    # Empresa que indicó al registrarse; el administrador la usa para crear o asignar su organización.
+    company = models.CharField("empresa", max_length=150, blank=True)
 
     reviewed_by = models.ForeignKey(
         "self", verbose_name="revisado por", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -85,5 +87,9 @@ class User(AbstractUser):
 
     @property
     def is_administrator(self):
-        """Puede gestionar usuarios y roles. Debe usar 2FA obligatoriamente."""
-        return self.is_superuser or self.has_perm("accounts.manage_users")
+        """Administra el sistema o alguna organización. Debe usar 2FA obligatoriamente."""
+        return (
+            self.is_superuser
+            or self.has_perm("accounts.manage_users")
+            or self.memberships.filter(role="admin").exists()
+        )

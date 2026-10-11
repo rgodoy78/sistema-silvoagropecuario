@@ -73,7 +73,13 @@ def user_edit(request, pk):
             form.save()
             messages.success(request, "Usuario actualizado.")
             return redirect("management:user_edit", pk=user.pk)
-    return render(request, "management/user_edit.html", {"form": form, "target": user, "has_2fa": otp.has_2fa(user)})
+    context = {
+        "form": form,
+        "target": user,
+        "has_2fa": otp.has_2fa(user),
+        "memberships": user.memberships.select_related("organization"),
+    }
+    return render(request, "management/user_edit.html", context)
 
 
 # Transiciones de estado permitidas: acción -> (estados de origen, estado destino)
