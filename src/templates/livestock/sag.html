@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Trámites SAG{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">Ganadería</p><h1>Trámites SAG</h1>
+    <p class="muted">Datos listos para la Declaración de Existencia Animal (DEA) y los FMA en SIPECweb.</p></div>
+  <div class="actions no-print">
+    <a class="button secondary" href="?formato=csv">Descargar CSV</a>
+    <a class="button secondary" href="{% url 'livestock:animal_list' %}">Planilla FMA</a>
+  </div>
+</div>
+<div class="no-print">{% include "livestock/_nav.html" %}</div>
+
+<h2 class="section-label">Existencias para la DEA · {{ today|date:"d-m-Y" }}</h2>
+<p class="muted small">Cabezas en existencia por establecimiento (RUP) y categoría oficial. Los toretes se informan como toros.
+  La DEA se declara al menos una vez al año y es requisito para obtener FMA y comprar DIIO.</p>
+{% if missing_rup %}
+  <div class="alert alert-warning no-print">Predios sin RUP: {% for f in missing_rup %}<a href="{% url 'livestock:farm_edit' f.pk %}">{{ f }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}. Agrégalo para que la declaración quede completa.</div>
+{% endif %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Predio</th><th>RUP</th>{% for c in categories %}<th class="num">{{ c }}</th>{% endfor %}<th class="num">Total</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.farm }}</td><td>{{ r.farm.rup|default:"—" }}</td>{% for n in r.counts %}<td class="num">{{ n }}</td>{% endfor %}<td class="num"><strong>{{ r.total }}</strong></td></tr>
+  {% empty %}<tr><td colspan="10" class="muted">Sin animales en existencia.</td></tr>{% endfor %}
+  </tbody>
+  {% if rows|length > 1 %}<tfoot><tr><th colspan="2">Total</th>{% for n in totals %}<th class="num">{{ n }}</th>{% endfor %}<th class="num">{{ grand_total }}</th></tr></tfoot>{% endif %}
+</table>
+</div>
+
+<h2 class="section-label">DIIO pendientes</h2>
+<p class="muted small">Los bovinos deben tener DIIO y estar registrados en SIPEC antes de los 12 meses de edad.</p>
+<div class="dash-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Plazo vencido <span class="badge badge-dead">{{ pending.overdue|length }}</span></h3><p>12 meses o más sin DIIO</p></div>
+    <ul class="plain-list">{% for a in pending.overdue|slice:":20" %}<li><a href="{% url 'livestock:animal_edit' a.pk %}">{{ a }}</a> <span class="muted small">{{ a.age_months }} meses · {{ a.farm }}</span></li>{% empty %}<li class="muted">Ninguno.</li>{% endfor %}</ul>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Por vencer <span class="badge badge-check-doubtful">{{ pending.soon|length }}</span></h3><p>10 a 11 meses sin DIIO</p></div>
+    <ul class="plain-list">{% for a in pending.soon|slice:":20" %}<li><a href="{% url 'livestock:animal_edit' a.pk %}">{{ a }}</a> <span class="muted small">{{ a.age_months }} meses · {{ a.farm }}</span></li>{% empty %}<li class="muted">Ninguno.</li>{% endfor %}</ul>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Sin fecha de nacimiento <span class="badge">{{ pending.unknown|length }}</span></h3><p>No se puede calcular el plazo</p></div>
+    <ul class="plain-list">{% for a in pending.unknown|slice:":20" %}<li><a href="{% url 'livestock:animal_edit' a.pk %}">{{ a }}</a> <span class="muted small">{{ a.farm }}</span></li>{% empty %}<li class="muted">Ninguno.</li>{% endfor %}</ul>
+  </div>
+</div>
+<p class="muted small no-print">Para preparar un FMA, selecciona los animales en <a href="{% url 'livestock:animal_list' %}">Animales</a> (de un mismo predio) y usa «Planilla FMA».</p>
+{% endblock %}

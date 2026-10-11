@@ -3,7 +3,10 @@
 {% block content %}
 <div class="page-head">
   <div><p class="eyebrow">Ganadería</p><h1>Animales</h1></div>
-  {% if current_membership.can_write %}<a class="button" href="{% url 'livestock:animal_create' %}">Registrar animal</a>{% endif %}
+  {% if current_membership.can_write %}<div class="actions">
+    <a class="button secondary" href="{% url 'livestock:animal_import' %}">Importar desde Excel</a>
+    <a class="button" href="{% url 'livestock:animal_create' %}">Registrar animal</a>
+  </div>{% endif %}
 </div>
 {% include "livestock/_nav.html" %}
 
@@ -43,6 +46,7 @@
     <button type="submit" formaction="{% url 'livestock:treatment_add' %}" class="small secondary">Aplicar tratamiento</button>
     <button type="submit" formaction="{% url 'livestock:service_add' %}" class="small secondary">Registrar servicio</button>
     <button type="submit" formaction="{% url 'livestock:cost_add' %}" class="small secondary">Asignar costo</button>
+    <button type="submit" formaction="{% url 'livestock:fma_sheet' %}" class="small secondary">Planilla FMA</button>
   </div>
   {% endif %}
 </div>

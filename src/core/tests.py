@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.models import Group
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
@@ -37,7 +39,8 @@ class SecurityHeadersTests(TestCase):
         self.assertContains(response, "datos ilustrativos")
         # Sin estilos ni scripts inline: la CSP los bloquearía.
         self.assertNotContains(response, "style=")
-        self.assertNotContains(response, "<script")
+        html = response.content.decode()
+        self.assertEqual(re.findall(r"<script(?![^>]*\ssrc=)", html), [], "script inline")
 
     def test_credits_page_lists_every_photo(self):
         from django.contrib.staticfiles import finders

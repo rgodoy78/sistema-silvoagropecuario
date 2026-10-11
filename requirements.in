@@ -9,3 +9,5 @@ argon2-cffi==25.1.0
 django-csp==4.0
 django-otp==1.7.4         # 2FA (TOTP + códigos de recuperación)
 qrcode==8.2               # QR en SVG para configurar el autenticador
+openpyxl==3.1.5           # importar planillas Excel (.xlsx) de animales
+defusedxml==0.7.1         # openpyxl lo usa para leer XML de forma segura
