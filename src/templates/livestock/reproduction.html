@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Reproducción{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">Ganadería</p><h1>Reproducción</h1>
+    <p class="muted">Encaste, diagnósticos, partos y destetes · últimos 12 meses.</p></div>
+</div>
+{% include "livestock/_nav.html" %}
+{% with s=summary %}
+<div class="kpi-grid kpi-grid-4">
+  <div class="kpi"><span class="kpi-label">Vacas y vaquillas</span><span class="kpi-value">{{ s.females }}</span>
+    <span class="kpi-foot muted">{{ s.pregnant_now }} preñada{{ s.pregnant_now|pluralize }} a la fecha</span></div>
+  <div class="kpi"><span class="kpi-label">Tasa de preñez</span>
+    <span class="kpi-value">{% if s.pregnancy_rate is not None %}{{ s.pregnancy_rate|floatformat:0 }} <small>%</small>{% else %}–{% endif %}</span>
+    <span class="kpi-foot muted">{{ s.checked }} hembra{{ s.checked|pluralize:"s" }} diagnosticada{{ s.checked|pluralize }}</span></div>
+  <div class="kpi"><span class="kpi-label">Partos</span><span class="kpi-value">{{ s.calvings }}</span>
+    <span class="kpi-foot muted">{{ s.live_calvings }} cría{{ s.live_calvings|pluralize }} viva{{ s.live_calvings|pluralize }}</span></div>
+  <div class="kpi"><span class="kpi-label">Destetes</span><span class="kpi-value">{{ s.weanings }}</span>
+    <span class="kpi-foot muted">{% if s.weaning_avg %}{{ s.weaning_avg|floatformat:0 }} kg promedio{% if s.adjusted_205 %} · {{ s.adjusted_205|floatformat:0 }} kg ajust. 205 d{% endif %}{% else %}Sin destetes{% endif %}</span></div>
+</div>
+
+<div class="dash-grid">
+  <div class="panel span-2">
+    <div class="panel-head"><h3>Próximos partos</h3><p>Preñadas con parto probable en los próximos 90 días o atrasado</p></div>
+    <table class="compact">
+      <thead><tr><th>Hembra</th><th>Parto probable</th><th>Predio</th></tr></thead>
+      <tbody>
+      {% for c in s.upcoming %}
+        <tr{% if c.expected_calving < today %} class="overdue"{% endif %}>
+          <td><a href="{% url 'livestock:animal_detail' c.female_id %}">{{ c.female }}</a></td>
+          <td>{{ c.expected_calving|date:"d-m-Y" }}{% if c.expected_calving < today %} <span class="badge badge-dead">Atrasado</span>{% endif %}</td>
+          <td>{{ c.female.farm }}</td>
+        </tr>
+      {% empty %}<tr><td colspan="3" class="muted">Sin partos próximos.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Pendientes de diagnóstico</h3><p>Servidas hace más de 35 días sin diagnóstico posterior</p></div>
+    <ul class="plain-list">
+      {% for f in s.pending|slice:":15" %}<li><a href="{% url 'livestock:animal_detail' f.pk %}">{{ f }}</a> <span class="muted small">{{ f.farm }}</span></li>
+      {% empty %}<li class="muted">Ninguna.</li>{% endfor %}
+    </ul>
+    {% if s.pending|length > 15 %}<p class="muted small">y {{ s.pending|length|add:"-15" }} más</p>{% endif %}
+  </div>
+</div>
+{% endwith %}
+
+<div class="dash-grid">
+  <div class="panel span-2">
+    <div class="panel-head"><h3>Últimos partos</h3></div>
+    <table class="compact">
+      <thead><tr><th>Fecha</th><th>Madre</th><th>Cría</th><th>Tipo</th><th class="num">Peso (kg)</th></tr></thead>
+      <tbody>
+      {% for c in recent_calvings %}
+        <tr><td>{{ c.date|date:"d-m-Y" }}</td>
+          <td><a href="{% url 'livestock:animal_detail' c.mother_id %}">{{ c.mother }}</a></td>
+          <td>{% if c.calf %}<a href="{% url 'livestock:animal_detail' c.calf_id %}">{{ c.calf }}</a> · {{ c.calf.get_sex_display }}{% else %}<span class="muted">Nacido muerto</span>{% endif %}</td>
+          <td>{{ c.get_ease_display }}</td><td class="num">{{ c.birth_weight_kg|floatformat:"-1"|default:"-" }}</td></tr>
+      {% empty %}<tr><td colspan="5" class="muted">Sin partos registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Últimos diagnósticos</h3></div>
+    <ul class="plain-list">
+      {% for c in recent_checks %}<li>{{ c.date|date:"d-m" }} · <a href="{% url 'livestock:animal_detail' c.female_id %}">{{ c.female }}</a> · <span class="badge badge-check-{{ c.result }}">{{ c.get_result_display }}</span></li>
+      {% empty %}<li class="muted">Sin diagnósticos.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+<p class="muted small">Para registrar servicios en masa (encaste o IA), selecciona las hembras en <a href="{% url 'livestock:animal_list' %}?categoria=vaca">Animales</a> y usa «Registrar servicio». Diagnósticos, partos y destetes se registran desde la ficha de cada animal.</p>
+{% endblock %}

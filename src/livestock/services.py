@@ -12,10 +12,19 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Count
 
-from livestock.models import Animal, Movement, Weighing
+from livestock.models import (
+    Animal,
+    Calving,
+    Movement,
+    PregnancyCheck,
+    Service,
+    Treatment,
+    Weaning,
+    Weighing,
+)
 
 ORIGIN_TO_KIND = {
     Animal.Origin.BORN: Movement.Kind.BIRTH,
@@ -254,3 +263,159 @@ def import_weighings(organization, user, rows, *, default_date, method=Weighing.
     Weighing.objects.bulk_create(to_create)
     result.created = len(to_create)
     return result
+
+
+# --- Reproducción -----------------------------------------------------------
+
+BREEDING_CATEGORIES = {Animal.Category.HEIFER, Animal.Category.COW}
+
+
+def register_services(females, user, *, kind, on, bull=None, semen="", technician="", notes=""):
+    """Registra el servicio (encaste o IA) de varias hembras en edad reproductiva."""
+    services = [
+        Service(organization=f.organization, female=f, kind=kind, date=on, bull=bull, semen=semen,
+                technician=technician, notes=notes, created_by=user)
+        for f in females
+        if f.is_active and f.category in BREEDING_CATEGORIES
+    ]
+    Service.objects.bulk_create(services)
+    return len(services)
+
+
+@transaction.atomic
+def register_calving(mother, user, *, on, ease, stillborn, calf_sex=None, calf_diio="", calf_tag="",
+                     calf_breed=None, birth_weight=None, notes=""):
+    """Parto: crea la cría (si nació viva) con su nacimiento, y la vaquilla pasa a vaca."""
+    calf = None
+    if not stillborn:
+        calf = Animal(
+            organization=mother.organization, diio=calf_diio, tag=calf_tag, sex=calf_sex,
+            category=Animal.Category.CALF_F if calf_sex == Animal.Sex.FEMALE else Animal.Category.CALF_M,
+            breed=calf_breed or mother.breed, birth_date=on, mother=mother, origin=Animal.Origin.BORN,
+            entry_date=on, farm=mother.farm, paddock=mother.paddock,
+        )
+        sire = mother.services.filter(date__lte=on).order_by("-date").first()
+        if sire:
+            calf.sire = sire.sire_label[:60]
+        register_animal(calf, user, entry_weight=birth_weight)
+    calving = Calving.objects.create(
+        organization=mother.organization, mother=mother, date=on, ease=ease, calf=calf, stillborn=stillborn,
+        birth_weight_kg=birth_weight, notes=notes, created_by=user,
+    )
+    if mother.category == Animal.Category.HEIFER:
+        mother.category = Animal.Category.COW
+        mother.save(update_fields=["category"])
+    return calving
+
+
+WEANED_CATEGORY = {Animal.Category.CALF_F: Animal.Category.HEIFER, Animal.Category.CALF_M: Animal.Category.YOUNG_BULL}
+
+
+@transaction.atomic
+def register_weaning(calf, user, *, on, weight, new_category=None, notes=""):
+    weaning = Weaning.objects.create(
+        organization=calf.organization, calf=calf, date=on, weight_kg=weight, notes=notes, created_by=user
+    )
+    Weighing.objects.create(
+        organization=calf.organization, animal=calf, date=on, weight_kg=weight, notes="Peso al destete",
+        created_by=user,
+    )
+    calf.category = new_category or WEANED_CATEGORY.get(calf.category, calf.category)
+    calf.save(update_fields=["category"])
+    return weaning
+
+
+def latest_checks(organization):
+    """Último diagnóstico de cada hembra activa: {female_id: PregnancyCheck}."""
+    checks = (
+        PregnancyCheck.objects.for_org(organization)
+        .filter(female__status=Animal.Status.ACTIVE)
+        .select_related("female")
+        .order_by("female_id", "-date", "-created_at")
+        .distinct("female_id")
+    )
+    return {c.female_id: c for c in checks}
+
+
+def reproduction_summary(organization, today=None):
+    today = today or date.today()
+    year_ago = today - timedelta(days=365)
+    females = Animal.objects.for_org(organization).filter(
+        status=Animal.Status.ACTIVE, category__in=BREEDING_CATEGORIES
+    )
+    latest = latest_checks(organization)
+    # Partos posteriores al diagnóstico cierran la preñez.
+    last_calving = dict(
+        Calving.objects.for_org(organization).order_by().values_list("mother_id").annotate(d=models.Max("date"))
+    )
+    open_pregnancies = [
+        c for c in latest.values()
+        if c.result == PregnancyCheck.Result.PREGNANT and not (last_calving.get(c.female_id, date.min) >= c.date)
+    ]
+    recent = [c for c in latest.values() if c.date >= year_ago]
+    pregnant_recent = [c for c in recent if c.result == PregnancyCheck.Result.PREGNANT]
+
+    last_service = dict(
+        Service.objects.for_org(organization).order_by().values_list("female_id").annotate(d=models.Max("date"))
+    )
+    pending = [
+        f for f in females.select_related("farm")
+        if (served := last_service.get(f.pk)) and served <= today - timedelta(days=35)
+        and (f.pk not in latest or latest[f.pk].date < served)
+        and last_calving.get(f.pk, date.min) < served
+    ]
+    calvings = Calving.objects.for_org(organization).filter(date__gte=year_ago)
+    weanings = list(
+        Weaning.objects.for_org(organization).filter(date__gte=year_ago).select_related("calf__birth_record")
+    )
+    adjusted = [w.adjusted_205 for w in weanings if w.adjusted_205]
+    return {
+        "females": females.count(),
+        "checked": len(recent),
+        "pregnancy_rate": len(pregnant_recent) / len(recent) * 100 if recent else None,
+        "upcoming": sorted(
+            (c for c in open_pregnancies if c.expected_calving and c.expected_calving <= today + timedelta(days=90)),
+            key=lambda c: c.expected_calving,
+        ),
+        "pregnant_now": len(open_pregnancies),
+        "pending": pending,
+        "calvings": calvings.count(),
+        "live_calvings": calvings.filter(stillborn=False).count(),
+        "weanings": len(weanings),
+        "weaning_avg": sum(float(w.weight_kg) for w in weanings) / len(weanings) if weanings else None,
+        "adjusted_205": sum(adjusted) / len(adjusted) if adjusted else None,
+    }
+
+
+# --- Sanidad ----------------------------------------------------------------
+
+
+def apply_treatment(animals, user, *, product, on, dose="", reason="", applied_by="", notes=""):
+    until = on + timedelta(days=product.withdrawal_days) if product.withdrawal_days else None
+    treatments = [
+        Treatment(organization=a.organization, animal=a, product=product, date=on, dose=dose, reason=reason,
+                  applied_by=applied_by, notes=notes, withdrawal_until=until, created_by=user)
+        for a in animals
+        if a.is_active
+    ]
+    Treatment.objects.bulk_create(treatments)
+    return len(treatments)
+
+
+def active_withdrawal(animal, on=None):
+    """Tratamiento con el resguardo más largo vigente a la fecha, o None."""
+    on = on or date.today()
+    return animal.treatments.filter(withdrawal_until__gte=on).select_related("product").order_by(
+        "-withdrawal_until"
+    ).first()
+
+
+def animals_in_withdrawal(organization, on=None):
+    on = on or date.today()
+    return (
+        Treatment.objects.for_org(organization)
+        .filter(withdrawal_until__gte=on, animal__status=Animal.Status.ACTIVE)
+        .select_related("animal", "product")
+        .order_by("animal_id", "-withdrawal_until")
+        .distinct("animal_id")
+    )

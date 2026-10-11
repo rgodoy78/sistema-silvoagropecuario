@@ -6,7 +6,8 @@
   <div>
     <p class="eyebrow">{{ animal.get_category_display }} · {{ animal.breed|default:"raza sin indicar" }}</p>
     <h1>{% if animal.diio %}DIIO {{ animal.diio }}{% else %}{{ animal.tag }}{% endif %}
-      <span class="badge badge-{{ animal.status }}">{{ animal.get_status_display }}</span></h1>
+      <span class="badge badge-{{ animal.status }}">{{ animal.get_status_display }}</span>
+      {% if withdrawal %}<span class="badge badge-dead" title="{{ withdrawal.product }}">En resguardo hasta {{ withdrawal.withdrawal_until|date:"d-m-Y" }}</span>{% endif %}</h1>
     {% if animal.diio and animal.tag %}<p class="muted">{{ animal.tag }}</p>{% endif %}
   </div>
   {% if current_membership.can_write %}
@@ -19,6 +20,17 @@
   </div>
   {% endif %}
 </div>
+{% if current_membership.can_write and animal.is_active %}
+<p class="quick-actions"><span class="muted small">Registrar:</span>
+  {% if is_breeding %}
+  <a href="{% url 'livestock:service_add' %}?animal={{ animal.pk }}">Servicio</a>
+  <a href="{% url 'livestock:check_add' animal.pk %}">Diagnóstico de preñez</a>
+  <a href="{% url 'livestock:calving_add' animal.pk %}">Parto</a>
+  {% endif %}
+  {% if is_calf and not weaning %}<a href="{% url 'livestock:weaning_add' animal.pk %}">Destete</a>{% endif %}
+  <a href="{% url 'livestock:treatment_add' %}?animal={{ animal.pk }}">Tratamiento</a>
+</p>
+{% endif %}
 
 <div class="kpi-grid kpi-grid-4">
   <div class="kpi"><span class="kpi-label">Último peso</span>
@@ -78,6 +90,49 @@
   {% endwith %}{% empty %}
     <tr><td colspan="6" class="muted">Sin pesajes.</td></tr>
   {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if is_breeding or services or checks or calvings %}
+<h2 class="section-label">Reproducción</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th>Evento</th><th>Detalle</th><th></th></tr></thead>
+  <tbody>
+  {% for c in calvings %}
+    <tr><td>{{ c.date|date:"d-m-Y" }}</td><td><span class="badge badge-move-birth">Parto</span></td>
+      <td>{{ c.get_ease_display }} · {% if c.calf %}cría <a href="{% url 'livestock:animal_detail' c.calf_id %}">{{ c.calf }}</a> ({{ c.calf.get_sex_display|lower }}){% else %}nacida muerta{% endif %}{% if c.birth_weight_kg %} · {{ c.birth_weight_kg|floatformat:"-1" }} kg{% endif %}</td><td></td></tr>
+  {% endfor %}
+  {% for c in checks %}
+    <tr><td>{{ c.date|date:"d-m-Y" }}</td><td><span class="badge badge-check-{{ c.result }}">{{ c.get_result_display }}</span></td>
+      <td>{{ c.get_method_display }}{% if c.months_pregnant %} · {{ c.months_pregnant|floatformat:"-1" }} meses{% endif %}{% if c.expected_calving %} · parto probable {{ c.expected_calving|date:"d-m-Y" }}{% endif %}{% if c.vet %} · {{ c.vet }}{% endif %}</td>
+      <td>{% if current_membership.can_write %}<form method="post" action="{% url 'livestock:event_delete' 'diagnostico' c.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}</td></tr>
+  {% endfor %}
+  {% for sv in services %}
+    <tr><td>{{ sv.date|date:"d-m-Y" }}</td><td><span class="badge">{{ sv.get_kind_display }}</span></td>
+      <td>{{ sv.sire_label|default:"-" }}{% if sv.technician %} · {{ sv.technician }}{% endif %}</td>
+      <td>{% if current_membership.can_write %}<form method="post" action="{% url 'livestock:event_delete' 'servicio' sv.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}</td></tr>
+  {% endfor %}
+  {% if not calvings and not checks and not services %}<tr><td colspan="4" class="muted">Sin eventos reproductivos.</td></tr>{% endif %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% if weaning %}
+<p class="card small"><strong>Destete:</strong> {{ weaning.date|date:"d-m-Y" }} · {{ weaning.weight_kg|floatformat:"-1" }} kg{% if weaning.age_days %} a los {{ weaning.age_days }} días{% endif %}{% if weaning.adjusted_205 %} · <strong>peso ajustado 205 días: {{ weaning.adjusted_205|floatformat:0 }} kg</strong>{% endif %}</p>
+{% endif %}
+
+<h2 class="section-label">Sanidad</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th>Producto</th><th>Dosis</th><th>Motivo</th><th>Aplicado por</th><th>Resguardo hasta</th><th></th></tr></thead>
+  <tbody>
+  {% for t in treatments %}
+    <tr><td>{{ t.date|date:"d-m-Y" }}</td><td>{{ t.product }}</td><td>{{ t.dose|default:"-" }}</td><td>{{ t.reason|default:"-" }}</td>
+      <td>{{ t.applied_by|default:"-" }}</td><td>{{ t.withdrawal_until|date:"d-m-Y"|default:"-" }}</td>
+      <td>{% if current_membership.can_write %}<form method="post" action="{% url 'livestock:treatment_delete' t.pk %}" class="inline">{% csrf_token %}<button type="submit" class="link">Eliminar</button></form>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="7" class="muted">Sin tratamientos.</td></tr>{% endfor %}
   </tbody>
 </table>
 </div>

@@ -5,7 +5,7 @@ identificados por DIIO, pesajes y movimientos (ingresos, traslados y salidas).
 Todo pertenece a una organización (cliente) salvo el catálogo de razas.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.core.validators import MinValueValidator, RegexValidator
@@ -271,3 +271,223 @@ class Movement(OrganizationScopedModel):
 
     def __str__(self):
         return f"{self.get_kind_display()} · {self.animal} ({self.date:%d-%m-%Y})"
+
+
+# --- Reproducción -----------------------------------------------------------
+
+GESTATION_DAYS = 283  # gestación bovina promedio
+
+
+class Service(OrganizationScopedModel):
+    """Servicio reproductivo de una hembra (encaste)."""
+
+    class Kind(models.TextChoices):
+        NATURAL = "natural", "Monta natural"
+        AI = "ai", "Inseminación artificial"
+        ET = "et", "Transferencia de embriones"
+
+    female = models.ForeignKey(Animal, verbose_name="hembra", on_delete=models.CASCADE, related_name="services")
+    kind = models.CharField("tipo", max_length=10, choices=Kind.choices, default=Kind.NATURAL)
+    date = models.DateField("fecha", default=date.today, help_text="En monta natural, inicio del encaste.")
+    bull = models.ForeignKey(
+        Animal, verbose_name="toro", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+    )
+    semen = models.CharField("pajuela / toro externo", max_length=60, blank=True)
+    technician = models.CharField("inseminador / responsable", max_length=80, blank=True)
+    notes = models.CharField("observación", max_length=200, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "servicio"
+        verbose_name_plural = "servicios"
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} · {self.female} ({self.date:%d-%m-%Y})"
+
+    @property
+    def sire_label(self):
+        return str(self.bull) if self.bull_id else self.semen
+
+
+class PregnancyCheck(OrganizationScopedModel):
+    class Result(models.TextChoices):
+        PREGNANT = "pregnant", "Preñada"
+        EMPTY = "empty", "Vacía"
+        DOUBTFUL = "doubtful", "Dudosa"
+
+    class Method(models.TextChoices):
+        PALPATION = "palpation", "Palpación rectal"
+        ULTRASOUND = "ultrasound", "Ecografía"
+        OTHER = "other", "Otro"
+
+    female = models.ForeignKey(
+        Animal, verbose_name="hembra", on_delete=models.CASCADE, related_name="pregnancy_checks"
+    )
+    date = models.DateField("fecha", default=date.today)
+    result = models.CharField("resultado", max_length=10, choices=Result.choices)
+    method = models.CharField("método", max_length=10, choices=Method.choices, default=Method.ULTRASOUND)
+    months_pregnant = models.DecimalField(
+        "meses de gestación", max_digits=3, decimal_places=1, null=True, blank=True,
+        validators=[MinValueValidator(1)], help_text="Estimación del veterinario; se usa para la fecha de parto.",
+    )
+    expected_calving = models.DateField("parto probable", null=True, blank=True, editable=False)
+    vet = models.CharField("veterinario", max_length=80, blank=True)
+    notes = models.CharField("observación", max_length=200, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "diagnóstico de preñez"
+        verbose_name_plural = "diagnósticos de preñez"
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.female}: {self.get_result_display()} ({self.date:%d-%m-%Y})"
+
+    def save(self, *args, **kwargs):
+        self.expected_calving = None
+        if self.result == self.Result.PREGNANT:
+            if self.months_pregnant:
+                elapsed = int(float(self.months_pregnant) * 30.4)
+                self.expected_calving = self.date + timedelta(days=GESTATION_DAYS - elapsed)
+            else:
+                service = self.female.services.filter(date__lte=self.date).order_by("-date").first()
+                if service:
+                    self.expected_calving = service.date + timedelta(days=GESTATION_DAYS)
+        super().save(*args, **kwargs)
+
+
+class Calving(OrganizationScopedModel):
+    class Ease(models.TextChoices):
+        NORMAL = "normal", "Normal"
+        ASSISTED = "assisted", "Asistido"
+        DYSTOCIA = "dystocia", "Distócico"
+        CESAREAN = "cesarean", "Cesárea"
+
+    mother = models.ForeignKey(Animal, verbose_name="madre", on_delete=models.CASCADE, related_name="calvings")
+    date = models.DateField("fecha", default=date.today)
+    ease = models.CharField("tipo de parto", max_length=10, choices=Ease.choices, default=Ease.NORMAL)
+    calf = models.OneToOneField(
+        Animal, verbose_name="cría", on_delete=models.SET_NULL, null=True, blank=True, related_name="birth_record"
+    )
+    stillborn = models.BooleanField("nacido muerto", default=False)
+    birth_weight_kg = models.DecimalField(
+        "peso al nacer (kg)", max_digits=5, decimal_places=1, null=True, blank=True, validators=[MinValueValidator(1)]
+    )
+    notes = models.CharField("observación", max_length=200, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "parto"
+        verbose_name_plural = "partos"
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"Parto de {self.mother} ({self.date:%d-%m-%Y})"
+
+
+class Weaning(OrganizationScopedModel):
+    calf = models.OneToOneField(Animal, verbose_name="cría", on_delete=models.CASCADE, related_name="weaning")
+    date = models.DateField("fecha", default=date.today)
+    weight_kg = models.DecimalField(
+        "peso al destete (kg)", max_digits=6, decimal_places=1, validators=[MinValueValidator(1)]
+    )
+    notes = models.CharField("observación", max_length=200, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "destete"
+        verbose_name_plural = "destetes"
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"Destete de {self.calf} ({self.date:%d-%m-%Y})"
+
+    @property
+    def age_days(self):
+        birth = self.calf.birth_date
+        return (self.date - birth).days if birth else None
+
+    @property
+    def adjusted_205(self):
+        """Peso ajustado a 205 días (estándar BIF): compara terneros destetados a distinta edad."""
+        days = self.age_days
+        if not days or days < 120 or days > 300:
+            return None
+        record = getattr(self.calf, "birth_record", None)
+        birth = float(record.birth_weight_kg) if record and record.birth_weight_kg else 35.0
+        return (float(self.weight_kg) - birth) / days * 205 + birth
+
+
+# --- Sanidad ----------------------------------------------------------------
+
+
+class HealthProduct(OrganizationScopedModel):
+    class Kind(models.TextChoices):
+        VACCINE = "vaccine", "Vacuna"
+        ANTIPARASITIC = "antiparasitic", "Antiparasitario"
+        ANTIBIOTIC = "antibiotic", "Antibiótico"
+        ANTIINFLAMMATORY = "antiinflammatory", "Antiinflamatorio"
+        VITAMIN = "vitamin", "Vitaminas y minerales"
+        HORMONE = "hormone", "Hormonal / reproductivo"
+        OTHER = "other", "Otro"
+
+    name = models.CharField("nombre comercial", max_length=100)
+    kind = models.CharField("tipo", max_length=20, choices=Kind.choices)
+    active_ingredient = models.CharField("principio activo", max_length=120, blank=True)
+    withdrawal_days = models.PositiveSmallIntegerField(
+        "resguardo carne (días)", default=0, help_text="Días desde la aplicación en que el animal no puede faenarse."
+    )
+    is_active = models.BooleanField("en uso", default=True)
+
+    class Meta:
+        verbose_name = "producto veterinario"
+        verbose_name_plural = "productos veterinarios"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["organization", "name"], name="livestock_healthproduct_name_unique"),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class Treatment(OrganizationScopedModel):
+    animal = models.ForeignKey(Animal, verbose_name="animal", on_delete=models.CASCADE, related_name="treatments")
+    product = models.ForeignKey(HealthProduct, verbose_name="producto", on_delete=models.PROTECT, related_name="+")
+    date = models.DateField("fecha", default=date.today)
+    dose = models.CharField("dosis", max_length=40, blank=True)
+    reason = models.CharField("motivo / diagnóstico", max_length=120, blank=True)
+    applied_by = models.CharField("aplicado por", max_length=80, blank=True)
+    withdrawal_until = models.DateField("resguardo hasta", null=True, blank=True, editable=False)
+    notes = models.CharField("observación", max_length=200, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, editable=False, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "tratamiento"
+        verbose_name_plural = "tratamientos"
+        ordering = ["-date", "-created_at"]
+        indexes = [models.Index(fields=["organization", "withdrawal_until"])]
+
+    def __str__(self):
+        return f"{self.product} · {self.animal} ({self.date:%d-%m-%Y})"
+
+    def save(self, *args, **kwargs):
+        days = self.product.withdrawal_days
+        self.withdrawal_until = self.date + timedelta(days=days) if days else None
+        super().save(*args, **kwargs)

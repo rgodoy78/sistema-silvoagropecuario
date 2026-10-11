@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<p><a href="{% if animals|length == 1 %}{% url 'livestock:animal_detail' animals.0.pk %}{% else %}{% url 'livestock:animal_list' %}{% endif %}">« Volver</a></p>
+<h1>{{ title }} · {{ animals|length }} animal{{ animals|length|pluralize:"es" }}</h1>
+<div class="card">
+  <p class="muted">{% for a in animals|slice:":30" %}{{ a }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if animals|length > 30 %} y {{ animals|length|add:"-30" }} más{% endif %}.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for a in animals %}<input type="hidden" name="animal" value="{{ a.pk }}">{% endfor %}
+    {{ form }}
+    <div class="actions"><button type="submit">{{ submit }}</button></div>
+  </form>
+</div>
+{% endblock %}

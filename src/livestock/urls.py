@@ -1,6 +1,6 @@
 from django.urls import path
 
-from livestock import views
+from livestock import views, views_health, views_reproduction
 
 app_name = "livestock"
 
@@ -24,4 +24,15 @@ urlpatterns = [
     path("lotes/", views.lot_list, name="lot_list"),
     path("lotes/nuevo/", views.lot_edit, name="lot_create"),
     path("lotes/<int:pk>/", views.lot_edit, name="lot_edit"),
+    path("reproduccion/", views_reproduction.reproduction, name="reproduction"),
+    path("reproduccion/servicio/", views_reproduction.service_add, name="service_add"),
+    path("animales/<int:pk>/diagnostico/", views_reproduction.check_add, name="check_add"),
+    path("animales/<int:pk>/parto/", views_reproduction.calving_add, name="calving_add"),
+    path("animales/<int:pk>/destete/", views_reproduction.weaning_add, name="weaning_add"),
+    path("reproduccion/<str:kind>/<int:pk>/eliminar/", views_reproduction.event_delete, name="event_delete"),
+    path("sanidad/", views_health.health, name="health"),
+    path("sanidad/productos/", views_health.product_add, name="product_add"),
+    path("sanidad/productos/<int:pk>/", views_health.product_edit, name="product_edit"),
+    path("sanidad/tratamiento/", views_health.treatment_add, name="treatment_add"),
+    path("sanidad/tratamientos/<int:pk>/eliminar/", views_health.treatment_delete, name="treatment_delete"),
 ]

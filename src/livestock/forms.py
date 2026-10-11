@@ -1,9 +1,23 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django import forms
 
 from accounts.validators import normalize_rut, validate_rut
-from livestock.models import Animal, Farm, Lot, Movement, Paddock, Weighing
+from livestock import services
+from livestock.models import (
+    Animal,
+    Breed,
+    Calving,
+    Farm,
+    HealthProduct,
+    Lot,
+    Movement,
+    Paddock,
+    PregnancyCheck,
+    Service,
+    Weighing,
+    diio_validator,
+)
 from organizations.forms import OrganizationScopedForm
 
 C = Animal.Category
@@ -188,6 +202,14 @@ class ExitForm(OrganizationScopedForm):
         cleaned = super().clean()
         if cleaned.get("kind") == Movement.Kind.DEATH and not cleaned.get("cause"):
             self.add_error("cause", "Indica la causa de muerte.")
+        if cleaned.get("kind") == Movement.Kind.SALE and cleaned.get("date"):
+            treatment = services.active_withdrawal(self.animal, cleaned["date"])
+            if treatment:
+                self.add_error(
+                    "kind",
+                    f"El animal está en período de resguardo hasta el {treatment.withdrawal_until:%d-%m-%Y} "
+                    f"por {treatment.product}. No puede venderse para faena antes de esa fecha.",
+                )
         return cleaned
 
 
@@ -208,3 +230,133 @@ class WeighingImportForm(forms.Form):
         if not upload.name.lower().endswith((".csv", ".txt")):
             raise forms.ValidationError("Sube un archivo .csv (exporta desde el software de la balanza).")
         return upload
+
+
+# --- Reproducción -----------------------------------------------------------
+
+
+class ServiceForm(forms.Form):
+    kind = forms.ChoiceField(label="Tipo", choices=Service.Kind.choices)
+    date = forms.DateField(label="Fecha", initial=date.today, widget=DATE_INPUT, validators=[not_in_future],
+                           help_text="En monta natural, inicio del encaste.")
+    bull = forms.ModelChoiceField(label="Toro del predio", queryset=Animal.objects.none(), required=False)
+    semen = forms.CharField(label="Pajuela / toro externo", required=False, max_length=60)
+    technician = forms.CharField(label="Inseminador / responsable", required=False, max_length=80)
+    notes = forms.CharField(label="Observación", required=False, max_length=200)
+
+    def __init__(self, *args, organization, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["bull"].queryset = Animal.objects.for_org(organization).filter(
+            status=Animal.Status.ACTIVE, sex=Animal.Sex.MALE, category__in=[C.BULL, C.YOUNG_BULL]
+        )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("kind") == Service.Kind.NATURAL and not (cleaned.get("bull") or cleaned.get("semen")):
+            self.add_error("bull", "Indica el toro (del predio o externo).")
+        if cleaned.get("kind") in (Service.Kind.AI, Service.Kind.ET) and not cleaned.get("semen"):
+            self.add_error("semen", "Indica la pajuela o el embrión utilizado.")
+        return cleaned
+
+
+class PregnancyCheckForm(OrganizationScopedForm):
+    class Meta:
+        model = PregnancyCheck
+        fields = ["date", "result", "method", "months_pregnant", "vet", "notes"]
+        widgets = {"date": DATE_INPUT}
+
+    def clean_date(self):
+        return not_in_future(self.cleaned_data.get("date"))
+
+    def clean(self):
+        cleaned = super().clean()
+        months = cleaned.get("months_pregnant")
+        if months and cleaned.get("result") != PregnancyCheck.Result.PREGNANT:
+            self.add_error("months_pregnant", "Solo aplica si el resultado es preñada.")
+        if months and months > 9.5:
+            self.add_error("months_pregnant", "La gestación bovina dura cerca de 9 meses y medio.")
+        return cleaned
+
+
+class CalvingForm(forms.Form):
+    date = forms.DateField(label="Fecha del parto", initial=date.today, widget=DATE_INPUT, validators=[not_in_future])
+    ease = forms.ChoiceField(label="Tipo de parto", choices=Calving.Ease.choices)
+    stillborn = forms.BooleanField(label="Nació muerto", required=False)
+    calf_sex = forms.ChoiceField(label="Sexo de la cría", choices=[("", "---------"), *Animal.Sex.choices],
+                                 required=False)
+    calf_diio = forms.CharField(label="DIIO de la cría", required=False, max_length=16,
+                                help_text="Si aún no tiene crotal, usa la identificación visual.")
+    calf_tag = forms.CharField(label="Identificación visual", required=False, max_length=30)
+    calf_breed = forms.ModelChoiceField(label="Raza de la cría", queryset=Breed.objects.all(), required=False,
+                                        help_text="Vacío: la de la madre.")
+    birth_weight = forms.DecimalField(label="Peso al nacer (kg)", required=False, min_value=1, max_value=90,
+                                      decimal_places=1)
+    notes = forms.CharField(label="Observación", required=False, max_length=200)
+
+    def __init__(self, *args, mother, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mother = mother
+
+    def clean_calf_diio(self):
+        diio = self.cleaned_data.get("calf_diio", "").strip()
+        if diio:
+            diio_validator(diio)
+            if Animal.objects.for_org(self.mother.organization).filter(diio=diio).exists():
+                raise forms.ValidationError("Ya existe un animal con este DIIO.")
+        return diio
+
+    def clean_date(self):
+        on = self.cleaned_data.get("date")
+        if on and self.mother.calvings.filter(date__gt=on - timedelta(days=240), date__lte=on).exists():
+            raise forms.ValidationError("Esta hembra ya tiene un parto registrado hace menos de 8 meses.")
+        return on
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get("stillborn"):
+            if not cleaned.get("calf_sex"):
+                self.add_error("calf_sex", "Indica el sexo de la cría.")
+            if not cleaned.get("calf_diio") and not cleaned.get("calf_tag"):
+                self.add_error("calf_tag", "Indica el DIIO o una identificación visual de la cría.")
+        return cleaned
+
+
+class WeaningForm(forms.Form):
+    date = forms.DateField(label="Fecha del destete", initial=date.today, widget=DATE_INPUT, validators=[not_in_future])
+    weight = forms.DecimalField(label="Peso al destete (kg)", min_value=30, max_value=500, decimal_places=1)
+    new_category = forms.ChoiceField(label="Nueva categoría")
+    notes = forms.CharField(label="Observación", required=False, max_length=200)
+
+    def __init__(self, *args, calf, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.calf = calf
+        options = [C.HEIFER] if calf.sex == Animal.Sex.FEMALE else [C.YOUNG_BULL, C.STEER]
+        self.fields["new_category"].choices = [(c.value, c.label) for c in options]
+
+    def clean_date(self):
+        on = self.cleaned_data.get("date")
+        if on and self.calf.birth_date and on <= self.calf.birth_date:
+            raise forms.ValidationError("El destete debe ser posterior al nacimiento.")
+        return on
+
+
+# --- Sanidad ----------------------------------------------------------------
+
+
+class HealthProductForm(OrganizationScopedForm):
+    class Meta:
+        model = HealthProduct
+        fields = ["name", "kind", "active_ingredient", "withdrawal_days", "is_active"]
+
+
+class TreatmentForm(forms.Form):
+    product = forms.ModelChoiceField(label="Producto", queryset=HealthProduct.objects.none())
+    date = forms.DateField(label="Fecha", initial=date.today, widget=DATE_INPUT, validators=[not_in_future])
+    dose = forms.CharField(label="Dosis", required=False, max_length=40, help_text="Ej.: 5 ml subcutáneo.")
+    reason = forms.CharField(label="Motivo / diagnóstico", required=False, max_length=120)
+    applied_by = forms.CharField(label="Aplicado por", required=False, max_length=80)
+    notes = forms.CharField(label="Observación", required=False, max_length=200)
+
+    def __init__(self, *args, organization, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["product"].queryset = HealthProduct.objects.for_org(organization).filter(is_active=True)

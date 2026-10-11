@@ -43,10 +43,23 @@ def _nice_max(value, ticks=4, integer=False):
     return step * ticks
 
 
-def _grid(max_value, top, bottom, ticks=4):
+def _nice_range(min_value, max_value, ticks=4):
+    """Eje que no parte en cero: [lo, hi] con pasos 'lindos' que contienen los datos.
+
+    Para magnitudes donde importa la variación (p. ej. el peso de un animal adulto).
+    """
+    step = _nice_max(max(max_value - min_value, 1) / ticks, ticks=1)
+    while True:
+        lo = math.floor(min_value / step) * step
+        if lo + step * ticks >= max_value:
+            return lo, lo + step * ticks
+        step = _nice_max(step * 1.01, ticks=1)
+
+
+def _grid(max_value, top, bottom, ticks=4, min_value=0):
     lines = []
     for i in range(ticks + 1):
-        value = max_value * i / ticks
+        value = min_value + (max_value - min_value) * i / ticks
         y = bottom - (bottom - top) * i / ticks
         lines.append({"y": round(y, 1), "label": fmt(value)})
     return lines
@@ -102,19 +115,27 @@ def hbar_chart(labels, values):
     }
 
 
-def line_chart(labels, series, width=680, height=260):
+def line_chart(labels, series, width=680, height=260, zero_based=True):
     """Líneas de varias series en la misma unidad: series = [(nombre, [valores...]), ...].
 
     Sin marcadores por punto: solo un punto al final de cada línea. Cada mes
-    tiene una zona invisible con el detalle en su tooltip.
+    tiene una zona invisible con el detalle en su tooltip. Con zero_based=False
+    el eje se ajusta al rango de los datos.
     """
     left, right, top, bottom = 44, width - 16, 16, height - 26
-    max_value = _nice_max(max((v for _, values in series for v in values), default=0))
+    all_values = [v for _, values in series for v in values]
+    if zero_based or not all_values:
+        min_value, max_value = 0, _nice_max(max(all_values, default=0))
+    else:
+        min_value, max_value = _nice_range(min(all_values), max(all_values))
+    span = max_value - min_value
     step = (right - left) / max(len(labels) - 1, 1)
     xs = [round(left + step * i, 1) for i in range(len(labels))]
     lines = []
     for n, (name, values) in enumerate(series):
-        points = [(x, round(bottom - (bottom - top) * v / max_value, 1)) for x, v in zip(xs, values, strict=True)]
+        points = [
+            (x, round(bottom - (bottom - top) * (v - min_value) / span, 1)) for x, v in zip(xs, values, strict=True)
+        ]
         lines.append({
             "name": name, "color": n % SERIES_COLORS + 1,
             "points": " ".join(f"{x},{y}" for x, y in points),
@@ -126,7 +147,7 @@ def line_chart(labels, series, width=680, height=260):
         hits.append({"x": round(x - step / 2, 1), "w": round(step, 1), "cx": x, "title": f"{label} — {detail}"})
     return {
         "width": width, "height": height, "left": left, "right": right, "top": top, "bottom": bottom,
-        "grid": _grid(max_value, top, bottom),
+        "grid": _grid(max_value, top, bottom, min_value=min_value),
         "labels": [{"x": x, "label": label} for x, label in zip(xs, labels, strict=True)],
         "lines": lines, "hits": hits,
         "head": [name for name, _ in series],

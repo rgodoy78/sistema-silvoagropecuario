@@ -6,7 +6,18 @@ from django.urls import reverse
 
 from accounts.tests import BaseTestCase, make_user
 from livestock import services
-from livestock.models import Animal, Breed, Farm, Lot, Movement, Paddock, Weighing
+from livestock.models import (
+    Animal,
+    Breed,
+    Farm,
+    HealthProduct,
+    Lot,
+    Movement,
+    Paddock,
+    PregnancyCheck,
+    Treatment,
+    Weighing,
+)
 from organizations.models import Membership, Organization
 
 TODAY = date.today()
@@ -252,3 +263,147 @@ class SmokeTests(LivestockTestCase):
         response = self.client.get(reverse("livestock:transfer"), {"animal": [mother.pk, calf.pk]})
         self.assertContains(response, "Trasladar 2 animales")
         self.assertContains(self.client.get(reverse("livestock:animal_list"), {"estado": "todos"}), "40000002")
+
+
+class ReproductionTests(LivestockTestCase):
+    def setUp(self):
+        super().setUp()
+        self.cow = make_animal(self.org, self.farm, diio="50000001", category="vaquilla",
+                               breed=Breed.objects.get(name="Hereford"))
+        self.bull = make_animal(self.org, self.farm, diio="50000099", sex="M", category="toro")
+
+    def test_bulk_service_only_for_breeding_females(self):
+        steer = make_animal(self.org, self.farm, diio="50000002", sex="M", category="novillo")
+        url = reverse("livestock:service_add")
+        self.client.post(url, {"animal": [self.cow.pk, steer.pk], "kind": "natural", "date": TODAY,
+                               "bull": self.bull.pk})
+        self.assertEqual(self.cow.services.get().bull, self.bull)
+        self.assertFalse(steer.services.exists())
+
+    def test_ai_requires_semen(self):
+        response = self.client.post(reverse("livestock:service_add"),
+                                    {"animal": [self.cow.pk], "kind": "ai", "date": TODAY})
+        self.assertContains(response, "pajuela")
+
+    def test_foreign_bull_rejected(self):
+        foreign_bull = make_animal(self.other_org, self.other_farm, diio="77777777", sex="M", category="toro")
+        self.client.post(reverse("livestock:service_add"),
+                         {"animal": [self.cow.pk], "kind": "natural", "date": TODAY, "bull": foreign_bull.pk})
+        self.assertFalse(self.cow.services.exists())
+
+    def test_pregnancy_check_estimates_calving_from_service(self):
+        services.register_services([self.cow], self.user, kind="ai", on=TODAY - timedelta(days=60), semen="ANG-123")
+        self.client.post(reverse("livestock:check_add", args=[self.cow.pk]),
+                         {"date": TODAY, "result": "pregnant", "method": "ultrasound"})
+        check = self.cow.pregnancy_checks.get()
+        self.assertEqual(check.expected_calving, TODAY - timedelta(days=60) + timedelta(days=283))
+        summary = services.reproduction_summary(self.org)
+        self.assertEqual(summary["pregnancy_rate"], 100)
+        self.assertEqual(summary["pregnant_now"], 1)
+
+    def test_pending_diagnosis(self):
+        services.register_services([self.cow], self.user, kind="natural", on=TODAY - timedelta(days=50),
+                                   bull=self.bull)
+        self.assertEqual(services.reproduction_summary(self.org)["pending"], [self.cow])
+        # Si pare después del servicio, ya no está pendiente de diagnóstico.
+        services.register_calving(self.cow, self.user, on=TODAY - timedelta(days=5), ease="normal", stillborn=True)
+        self.assertEqual(services.reproduction_summary(self.org)["pending"], [])
+
+    def test_calving_creates_calf_and_promotes_heifer(self):
+        services.register_services([self.cow], self.user, kind="ai", on=TODAY - timedelta(days=283), semen="ANG-123")
+        response = self.client.post(reverse("livestock:calving_add", args=[self.cow.pk]), {
+            "date": TODAY, "ease": "normal", "calf_sex": "M", "calf_tag": "T-01", "birth_weight": "36",
+        })
+        calf = Animal.objects.get(tag="T-01")
+        self.assertRedirects(response, reverse("livestock:animal_detail", args=[calf.pk]))
+        self.assertEqual((calf.mother, calf.category, calf.sire, calf.breed.name), (self.cow, "ternero", "ANG-123",
+                                                                                    "Hereford"))
+        self.assertEqual(calf.organization, self.org)
+        self.assertEqual(calf.weighings.get().weight_kg, 36)
+        self.cow.refresh_from_db()
+        self.assertEqual(self.cow.category, "vaca")
+        # La preñez quedó cerrada por el parto.
+        self.assertEqual(services.reproduction_summary(self.org)["calvings"], 1)
+
+    def test_calving_requires_calf_identification_unless_stillborn(self):
+        url = reverse("livestock:calving_add", args=[self.cow.pk])
+        self.assertContains(self.client.post(url, {"date": TODAY, "ease": "normal", "calf_sex": "F"}),
+                            "identificación visual de la cría")
+        self.client.post(url, {"date": TODAY, "ease": "dystocia", "stillborn": "on"})
+        calving = self.cow.calvings.get()
+        self.assertTrue(calving.stillborn)
+        self.assertIsNone(calving.calf)
+
+    def test_weaning_updates_category_and_adjusted_weight(self):
+        calf = make_animal(self.org, self.farm, diio="50000010", sex="M", category="ternero",
+                           birth_date=TODAY - timedelta(days=200))
+        self.client.post(reverse("livestock:weaning_add", args=[calf.pk]),
+                         {"date": TODAY, "weight": "215", "new_category": "novillo"})
+        calf.refresh_from_db()
+        self.assertEqual(calf.category, "novillo")
+        weaning = calf.weaning
+        self.assertAlmostEqual(weaning.adjusted_205, (215 - 35) / 200 * 205 + 35)
+        self.assertEqual(self.client.get(reverse("livestock:weaning_add", args=[calf.pk])).status_code, 404)
+
+    def test_males_cannot_calve(self):
+        self.assertEqual(self.client.get(reverse("livestock:calving_add", args=[self.bull.pk])).status_code, 404)
+
+    def test_reproduction_page_renders(self):
+        services.register_services([self.cow], self.user, kind="natural", on=TODAY - timedelta(days=200),
+                                   bull=self.bull)
+        PregnancyCheck.objects.create(organization=self.org, female=self.cow, date=TODAY - timedelta(days=100),
+                                      result="pregnant", months_pregnant=4)
+        response = self.client.get(reverse("livestock:reproduction"))
+        self.assertContains(response, "50000001")
+        self.assertContains(self.client.get(reverse("livestock:animal_detail", args=[self.cow.pk])), "Preñada")
+
+
+class HealthTests(LivestockTestCase):
+    def setUp(self):
+        super().setUp()
+        self.product = HealthProduct.objects.create(organization=self.org, name="Ivermectina 1%",
+                                                    kind="antiparasitic", withdrawal_days=35)
+        self.lot = Lot.objects.create(organization=self.org, name="Engorda")
+        self.a1 = make_animal(self.org, self.farm, diio="60000001", sex="M", category="novillo", lot=self.lot)
+        self.a2 = make_animal(self.org, self.farm, diio="60000002", sex="M", category="novillo", lot=self.lot)
+
+    def test_lot_treatment_sets_withdrawal(self):
+        self.client.post(reverse("livestock:treatment_add"),
+                         {"lote": self.lot.pk, "product": self.product.pk, "date": TODAY, "dose": "10 ml"})
+        self.assertEqual(Treatment.objects.filter(organization=self.org).count(), 2)
+        self.assertEqual(self.a1.treatments.get().withdrawal_until, TODAY + timedelta(days=35))
+        self.assertContains(self.client.get(reverse("livestock:health")), "60000002")
+
+    def test_sale_blocked_during_withdrawal(self):
+        services.apply_treatment([self.a1], self.user, product=self.product, on=TODAY - timedelta(days=10))
+        url = reverse("livestock:animal_exit", args=[self.a1.pk])
+        self.assertContains(self.client.post(url, {"kind": "sale", "date": TODAY}), "período de resguardo")
+        self.a1.refresh_from_db()
+        self.assertTrue(self.a1.is_active)
+        # Una muerte sí se puede registrar.
+        self.client.post(url, {"kind": "death", "date": TODAY, "cause": "Neumonía"})
+        self.a1.refresh_from_db()
+        self.assertEqual(self.a1.status, "dead")
+
+    def test_sale_allowed_after_withdrawal(self):
+        services.apply_treatment([self.a2], self.user, product=self.product, on=TODAY - timedelta(days=40))
+        self.client.post(reverse("livestock:animal_exit", args=[self.a2.pk]), {"kind": "sale", "date": TODAY})
+        self.a2.refresh_from_db()
+        self.assertEqual(self.a2.status, "sold")
+
+    def test_foreign_product_rejected(self):
+        foreign = HealthProduct.objects.create(organization=self.other_org, name="X", kind="other")
+        self.client.post(reverse("livestock:treatment_add"),
+                         {"animal": [self.a1.pk], "product": foreign.pk, "date": TODAY})
+        self.assertFalse(self.a1.treatments.exists())
+
+    def test_cannot_delete_foreign_treatment(self):
+        foreign_product = HealthProduct.objects.create(organization=self.other_org, name="Y", kind="other")
+        t = Treatment.objects.create(organization=self.other_org, animal=self.other_animal, product=foreign_product,
+                                     date=TODAY)
+        self.assertEqual(self.client.post(reverse("livestock:treatment_delete", args=[t.pk])).status_code, 404)
+
+    def test_duplicate_product_name_is_form_error(self):
+        self.client.post(reverse("livestock:product_add"), {"name": "Ivermectina 1%", "kind": "other",
+                                                            "withdrawal_days": 0})
+        self.assertEqual(HealthProduct.objects.filter(organization=self.org).count(), 1)
