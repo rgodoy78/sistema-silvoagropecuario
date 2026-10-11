@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 
 from accounts.validators import normalize_rut
-from organizations.models import Membership, Organization
+from organizations.models import Membership, Organization, OrganizationScopedModel
 
 User = get_user_model()
 
@@ -41,3 +41,30 @@ class MemberAddForm(forms.Form):
 
 class MemberRoleForm(forms.Form):
     role = forms.ChoiceField(label="Rol", choices=Membership.Role.choices)
+
+
+class OrganizationScopedForm(forms.ModelForm):
+    """ModelForm para datos de un cliente.
+
+    Limita toda lista de selección de datos de cliente (predios, lotes, ...) a la
+    organización activa y asigna esa organización al guardar. Así un id de otra
+    organización enviado a mano es rechazado como opción inválida.
+    """
+
+    def __init__(self, *args, organization, **kwargs):
+        self.organization = organization
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            queryset = getattr(field, "queryset", None)
+            if queryset is not None and issubclass(queryset.model, OrganizationScopedModel):
+                field.queryset = queryset.filter(organization=organization)
+
+    # Campos asignados por código que igual deben validarse en las restricciones de unicidad.
+    validate_assigned = ("organization",)
+
+    def _post_clean(self):
+        self.instance.organization = self.organization
+        super()._post_clean()
+
+    def _get_validation_exclusions(self):
+        return super()._get_validation_exclusions() - set(self.validate_assigned)

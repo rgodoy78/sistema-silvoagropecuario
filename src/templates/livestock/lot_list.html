@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Lotes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="eyebrow">Ganadería</p><h1>Lotes de manejo</h1></div>
+  {% if current_membership.can_write %}<a class="button" href="{% url 'livestock:lot_create' %}">Nuevo lote</a>{% endif %}
+</div>
+{% include "livestock/_nav.html" %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Lote</th><th>Propósito</th><th class="num">Cabezas</th><th>Estado</th><th></th></tr></thead>
+  <tbody>
+  {% for lot in lots %}
+    <tr>
+      <td>{% if current_membership.can_write %}<a href="{% url 'livestock:lot_edit' lot.pk %}">{{ lot.name }}</a>{% else %}{{ lot.name }}{% endif %}</td>
+      <td>{{ lot.get_purpose_display }}</td>
+      <td class="num"><a href="{% url 'livestock:animal_list' %}?lote={{ lot.pk }}">{{ lot.heads }}</a></td>
+      <td>{% if lot.is_active %}<span class="badge badge-active">Activo</span>{% else %}<span class="badge badge-disabled">Cerrado</span>{% endif %}</td>
+      <td>{% if current_membership.can_write and lot.heads %}<a href="{% url 'livestock:transfer' %}?lote={{ lot.pk }}">Trasladar lote</a>{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="muted">Aún no hay lotes. Úsalos para agrupar animales por manejo (ej.: «Engorda invierno 2026»).</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

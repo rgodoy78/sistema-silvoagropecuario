@@ -41,6 +41,7 @@
             {% endif %}
           {% endif %}
           <a href="{% url 'home' %}">Panel</a>
+          {% if current_organization %}<a href="{% url 'livestock:dashboard' %}">Ganadería</a>{% endif %}
           {% if current_membership.is_admin %}
             <a href="{% url 'organizations:team' %}">Equipo</a>
           {% endif %}

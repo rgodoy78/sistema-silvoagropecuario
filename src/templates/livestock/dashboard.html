@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Ganadería{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">{{ current_organization }}</p>
+    <h1>Ganadería bovina</h1>
+    <p class="muted">Cría y engorda · existencias, pesajes y movimientos.</p>
+  </div>
+  {% if current_membership.can_write %}
+  <div class="actions">
+    <a class="button secondary" href="{% url 'livestock:weighing_import' %}">Importar pesajes</a>
+    <a class="button" href="{% url 'livestock:animal_create' %}">Registrar animal</a>
+  </div>
+  {% endif %}
+</div>
+{% include "livestock/_nav.html" %}
+
+{% if not has_farms %}
+  <div class="card empty">
+    <h2>Empecemos por tu predio</h2>
+    <p>Registra tus predios (con su RUP del SAG) y potreros. Luego podrás ingresar animales, pesajes y movimientos.</p>
+    {% if current_membership.can_write %}<a class="button" href="{% url 'livestock:farm_create' %}">Registrar predio</a>{% endif %}
+  </div>
+{% else %}
+<div class="kpi-grid kpi-grid-4">
+  <a class="kpi" href="{% url 'livestock:animal_list' %}">
+    <span class="kpi-label">Cabezas en existencia</span><span class="kpi-value">{{ total }}</span>
+    <span class="kpi-foot">{{ females }} hembra{{ females|pluralize }} · {{ males }} macho{{ males|pluralize }}</span>
+  </a>
+  <div class="kpi">
+    <span class="kpi-label">Ganancia diaria promedio</span>
+    <span class="kpi-value">{% if gain.average is not None %}{{ gain.average|floatformat:2 }} <small>kg/día</small>{% else %}–{% endif %}</span>
+    <span class="kpi-foot muted">{{ gain.animals }} animal{{ gain.animals|pluralize:"es" }} con 2+ pesajes (180 días)</span>
+  </div>
+  <div class="kpi"><span class="kpi-label">Pesajes últimos 30 días</span><span class="kpi-value">{{ weighed_30 }}</span></div>
+  <div class="kpi">
+    <span class="kpi-label">Últimos 12 meses</span>
+    <span class="kpi-value small-list">
+      {% for label, n in moves.items %}<span>{{ label }} <strong>{{ n }}</strong></span>{% endfor %}
+    </span>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <div class="panel">
+    <div class="panel-head"><h3>Existencias por categoría</h3><p>Cabezas en existencia</p></div>
+    {% if by_category.bars %}{% include "core/charts/hbar.html" with chart=by_category title="Existencias por categoría" %}{% else %}<p class="muted">Sin animales.</p>{% endif %}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Cabezas por predio</h3><p>Animales en existencia</p></div>
+    {% if by_farm.bars %}{% include "core/charts/hbar.html" with chart=by_farm title="Cabezas por predio" %}{% else %}<p class="muted">Sin animales.</p>{% endif %}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Ganancia diaria por lote</h3><p>kg/día · últimos 180 días</p></div>
+    {% if gain_by_lot.bars %}{% include "core/charts/hbar.html" with chart=gain_by_lot title="Ganancia diaria por lote en kg/día" %}{% else %}<p class="muted">Se necesitan al menos dos pesajes por animal.</p>{% endif %}
+  </div>
+</div>
+
+<h2 class="section-label">Últimos movimientos</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fecha</th><th>Tipo</th><th>Animal</th><th>Detalle</th></tr></thead>
+  <tbody>
+  {% for m in recent %}
+    <tr>
+      <td>{{ m.date|date:"d-m-Y" }}</td>
+      <td><span class="badge badge-move-{{ m.kind }}">{{ m.get_kind_display }}</span></td>
+      <td><a href="{% url 'livestock:animal_detail' m.animal_id %}">{{ m.animal }}</a></td>
+      <td class="muted">{{ m.counterparty|default:m.cause|default:m.notes|default:"" }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4" class="muted">Sin movimientos.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

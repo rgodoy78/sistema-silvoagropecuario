@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Importar pesajes{% endblock %}
+{% block content %}
+<div class="page-head"><div><p class="eyebrow">Ganadería</p><h1>Importar pesajes de la balanza</h1></div></div>
+{% include "livestock/_nav.html" %}
+<div class="dash-grid">
+  <div class="card span-2">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {{ form }}
+      <div class="actions"><button type="submit">Importar</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Formato del archivo</h3>
+    <p class="small">Exporta la sesión de pesaje desde el software de tu balanza (Tru-Test, Gallagher u otra) como <strong>CSV</strong>. La primera fila debe tener los nombres de las columnas:</p>
+    <ul class="small plain-list">
+      <li><strong>DIIO</strong> o <strong>EID</strong> (también sirve la identificación visual)</li>
+      <li><strong>Peso</strong> o <strong>Weight</strong>, en kg</li>
+      <li><strong>Fecha</strong> o <strong>Date</strong> (opcional)</li>
+    </ul>
+    <p class="small muted">Se aceptan separadores coma o punto y coma, y decimales con coma o punto. El EID de 15 dígitos (152…) se asocia al DIIO automáticamente.</p>
+  </div>
+</div>
+{% if result %}
+<div class="card">
+  <h2>Resultado</h2>
+  <p><strong>{{ result.created }}</strong> pesaje{{ result.created|pluralize }} importado{{ result.created|pluralize }}.</p>
+  {% if result.unknown %}
+    <div class="alert alert-warning">{{ result.unknown|length }} identificador{{ result.unknown|length|pluralize:"es" }} no corresponde{{ result.unknown|length|pluralize:"n" }} a animales en existencia:
+      {{ result.unknown|slice:":50"|join:", " }}{% if result.unknown|length > 50 %}…{% endif %}</div>
+  {% endif %}
+  {% if result.errors %}
+    <div class="alert alert-error"><ul class="plain-list">{% for e in result.errors|slice:":50" %}<li>{{ e }}</li>{% endfor %}</ul></div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

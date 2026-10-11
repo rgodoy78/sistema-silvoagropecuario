@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "accounts",
     "core",
     "organizations",
+    "livestock",
 ]
 
 MIDDLEWARE = [
