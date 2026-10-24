@@ -179,9 +179,9 @@ django-csp==4.0 \
     --hash=sha256:b27010bb702eb20a3dad329178df2b61a2b82d338b70fbdc13c3a3bd28712833 \
     --hash=sha256:d5a0a05463a6b75a4f1fc1828c58c89af8db9364d09fc6e12f122b4d7f3d00dc
     # via -r requirements.in
-django-otp==1.7.4 \
-    --hash=sha256:2fa56711167db887bf80ebdc35820355e756a3fdc0b9af0e34494b737312bc16 \
-    --hash=sha256:f3a970be59ca407d90fd278de3253979417364f91e9edcfcd7a9f05235859b27
+django-otp==1.7.5 \
+    --hash=sha256:475d4111e07d61616996f098d08d29884da6397273a11f53c1b8e8c75d27e1dc \
+    --hash=sha256:7f554d21dcd035550c3b8e3f154b1f422fee71fdc75c8a3bf96e42a2ea6dafcc
     # via -r requirements.in
 et-xmlfile==2.0.0 \
     --hash=sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa \
